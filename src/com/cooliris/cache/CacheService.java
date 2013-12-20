@@ -940,7 +940,7 @@ public final class CacheService extends IntentService {
     }
 
     /**
-     *这个函数用于检查是否有新的相册 ，这个我真是不特别懂..
+     *这个函数用于检查是否有新的相册 ，这个我真是不特别懂..呵呵
      */
     public static final long[] computeDirtySets(final Context context) {
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
