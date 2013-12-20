@@ -17,8 +17,10 @@
 package com.cooliris.media;
 
 import java.util.ArrayList;
+
 import javax.microedition.khronos.opengles.GL11;
 
+import android.content.Context;
 import android.hardware.SensorEvent;
 import android.opengl.GLU;
 import android.os.PowerManager;
@@ -26,7 +28,6 @@ import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.content.Context;
 
 import com.cooliris.app.App;
 import com.cooliris.app.Res;
@@ -168,6 +169,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mHud.getTimeBar().setListener(this);
         mHud.getPathBar().pushLabel(Res.drawable.icon_home_small, context.getResources().getString(Res.string.app_name),
                 new Runnable() {
+                    @Override
                     public void run() {
                         if (mHud.getAlpha() == 1.0f) {
                             if (!mFeedAboutToChange) {
@@ -199,17 +201,23 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void stop() {
         endSlideshow();
-        mBackground.clear();
+        getBackgroundLayer().clear();
         handleLowMemory();
     }
 
     @Override
     public void generate(RenderView view, RenderView.Lists lists) {
+        //没这个就没每一个cell了
         lists.updateList.add(this);
+        //缺这个程序会挂，有地方报空指针
         lists.opaqueList.add(this);
-        mBackground.generate(view, lists);
+        //没这个背景是黑的
+        getBackgroundLayer().generate(view, lists);
+        //没这个，每个cell就没白边了..
         lists.blendedList.add(this);
+        //没这个屏幕滑不动，cell 点不动
         lists.hitTestList.add(this);
+        //没这个，图库，照相 那两个地方没图了..
         mHud.generate(view, lists);
     }
 
@@ -217,7 +225,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     protected void onSizeChanged() {
         mHud.setSize(mWidth, mHeight);
         mHud.setAlpha(1.0f);
-        mBackground.setSize(mWidth, mHeight);
+        getBackgroundLayer().setSize(mWidth, mHeight);
         if (mView != null) {
             mView.requestRender();
         }
@@ -266,6 +274,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                 int icon = mDrawables.getIconForSet(set, true);
                 if (set != null) {
                     mHud.getPathBar().pushLabel(icon, set.mNoCountTitleString, new Runnable() {
+                        @Override
                         public void run() {
                             if (mFeedAboutToChange) {
                                 return;
@@ -302,6 +311,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             layoutInterface.mSpacingY = (int) (40 * App.PIXEL_DENSITY);
             if (mState != STATE_FULL_SCREEN) {
                 mHud.getPathBar().pushLabel(Res.drawable.ic_fs_details, "", new Runnable() {
+                    @Override
                     public void run() {
                         if (mHud.getAlpha() == 1.0f) {
                             mHud.swapFullscreenLabel();
@@ -348,6 +358,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mLocationFilter == false) {
             mLocationFilter = true;
             mHud.getPathBar().pushLabel(Res.drawable.icon_location_small, label, new Runnable() {
+                @Override
                 public void run() {
                     if (mHud.getAlpha() == 1.0f) {
                         if (mState == STATE_FULL_SCREEN) {
@@ -432,7 +443,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
             feed.shutdown();
             mDisplayList.clear();
-            mBackground.clear();
+            getBackgroundLayer().clear();
         }
 
         mMediaFeed.start();
@@ -762,7 +773,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     public void handleLowMemory() {
         clearUnusedThumbnails();
         GridDrawables.sStringTextureTable.clear();
-        mBackground.clearCache();
+        getBackgroundLayer().clearCache();
     }
 
     // This method can be potentially expensive
@@ -777,7 +788,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mHud.reset();
         GridDrawables.sStringTextureTable.clear();
         mDrawables.onSurfaceCreated(view, gl);
-        mBackground.clear();
+        getBackgroundLayer().clear();
     }
 
     @Override
@@ -788,6 +799,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     // Renders the node in a given pass.
+    @Override
     public void renderOpaque(RenderView view, GL11 gl) {
         GridCamera camera = mCamera;
         int selectedSlotIndex = mInputProcessor.getCurrentSelectedSlot();
@@ -826,6 +838,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         view.setAlpha(mSelectedAlpha);
     }
 
+    @Override
     public void renderBlended(RenderView view, GL11 gl) {
         // We draw the placeholder for all visible slots.
         if (mHud != null && mDrawManager != null) {
@@ -907,6 +920,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     // called on background thread
+    @Override
     public synchronized void onFeedChanged(MediaFeed feed, boolean needsLayout) {
         if (!needsLayout && !mFeedAboutToChange) {
             mFeedChanged = true;
@@ -1278,6 +1292,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         }
     }
 
+    @Override
     public void onTimeChanged(TimeBar timebar) {
         if (mFeedAboutToChange) {
             return;
@@ -1306,6 +1321,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         }
     }
 
+    @Override
     public void onFeedAboutToChange(MediaFeed feed) {
         mFeedAboutToChange = true;
     }
@@ -1448,6 +1464,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mHud.getPathBar().popLabel();
         mHud.getPathBar().pushLabel(Res.drawable.icon_location_small, mContext.getResources().getString(Res.string.pick),
                 new Runnable() {
+                    @Override
                     public void run() {
                         if (mHud.getAlpha() == 1.0f) {
                             if (!mFeedAboutToChange) {
@@ -1472,6 +1489,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             // We need to make sure we haven't pushed the same label twice
             if (mHud.getPathBar().getNumLevels() == 1) {
                 mHud.getPathBar().pushLabel(Res.drawable.icon_folder_small, setName, new Runnable() {
+                    @Override
                     public void run() {
                         if (mFeedAboutToChange) {
                             return;
@@ -1514,12 +1532,14 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         }
     }
 
+    @Override
     public void onResume() {
         if (mMediaFeed != null) {
             mMediaFeed.onResume();
         }
     }
 
+    @Override
     public void onPause() {
         if (mMediaFeed != null) {
             mMediaFeed.onPause();
@@ -1528,5 +1548,9 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public void setEnterSelectionMode(boolean enterSelection) {
         mRequestToEnterSelection = enterSelection;
+    }
+
+    public BackgroundLayer getBackgroundLayer() {
+        return mBackground;
     }
 }

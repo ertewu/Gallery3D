@@ -72,6 +72,7 @@ public final class HudLayer extends Layer {
     private static final int ZOOM_OUT_ICON_PRESSED = Res.drawable.gallery_zoom_out_touch;
 
     private final Runnable mCameraButtonAction = new Runnable() {
+        @Override
         public void run() {
             // Launch the camera intent.
             Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
@@ -85,6 +86,7 @@ public final class HudLayer extends Layer {
     private static final int GRID_MODE_PRESSED_ICON = Res.drawable.mode_stack;
 
     private final Runnable mZoomInButtonAction = new Runnable() {
+        @Override
         public void run() {
             mGridLayer.zoomInToSelectedItem();
             mGridLayer.markDirty(1);
@@ -92,6 +94,7 @@ public final class HudLayer extends Layer {
     };
 
     private final Runnable mZoomOutButtonAction = new Runnable() {
+        @Override
         public void run() {
             mGridLayer.zoomOutFromSelectedItem();
             mGridLayer.markDirty(1);
@@ -99,6 +102,7 @@ public final class HudLayer extends Layer {
     };
 
     private final Runnable mGridModeButtonAction = new Runnable() {
+        @Override
         public void run() {
             mGridLayer.setState(GridLayer.STATE_GRID_VIEW);
         }
@@ -110,6 +114,7 @@ public final class HudLayer extends Layer {
     private static final int STACK_MODE_ICON = Res.drawable.mode_grid;
     private static final int STACK_MODE_PRESSED_ICON = Res.drawable.mode_grid;
     private final Runnable mStackModeButtonAction = new Runnable() {
+        @Override
         public void run() {
             mGridLayer.setState(GridLayer.STATE_TIMELINE);
         }
@@ -139,15 +144,18 @@ public final class HudLayer extends Layer {
 
         // The Share submenu is populated dynamically when opened.
         Resources resources = context.getResources();
+        //这是一个PopupMenu.Option的数组?..
         PopupMenu.Option[] deleteOptions = {
                 new PopupMenu.Option(context.getResources().getString(Res.string.confirm_delete), resources
                         .getDrawable(Res.drawable.icon_delete), new Runnable() {
+                    @Override
                     public void run() {
                         deleteSelection();
                     }
                 }),
                 new PopupMenu.Option(context.getResources().getString(Res.string.cancel), resources
                         .getDrawable(Res.drawable.icon_cancel), new Runnable() {
+                    @Override
                     public void run() {
 
                     }
@@ -156,6 +164,7 @@ public final class HudLayer extends Layer {
 
         MenuBar.Menu shareMenu = new MenuBar.Menu.Builder(context.getResources().getString(Res.string.share)).icon(
                 Res.drawable.icon_share).onSelect(new Runnable() {
+            @Override
             public void run() {
                 updateShareMenu();
             }
@@ -166,6 +175,7 @@ public final class HudLayer extends Layer {
 
         MenuBar.Menu moreMenu = new MenuBar.Menu.Builder(context.getResources().getString(Res.string.more)).icon(
                 Res.drawable.icon_more).onSelect(new Runnable() {
+            @Override
             public void run() {
                 buildMoreOptions();
             }
@@ -173,7 +183,7 @@ public final class HudLayer extends Layer {
 
         mNormalBottomMenu = new MenuBar.Menu[] { shareMenu, deleteMenu, moreMenu };
         mSingleViewIntentBottomMenu = new MenuBar.Menu[] { shareMenu, moreMenu };
-        
+
         mNormalBottomMenuNoShare = new MenuBar.Menu[] { deleteMenu, moreMenu };
         mSingleViewIntentBottomMenuNoShare = new MenuBar.Menu[] { moreMenu };
 
@@ -181,11 +191,13 @@ public final class HudLayer extends Layer {
         mSelectionMenuTop = new MenuBar(context);
         mSelectionMenuTop.setMenus(new MenuBar.Menu[] {
                 new MenuBar.Menu.Builder(context.getResources().getString(Res.string.select_all)).onSelect(new Runnable() {
+                    @Override
                     public void run() {
                         mGridLayer.selectAll();
                     }
                 }).build(), new MenuBar.Menu.Builder("").build(),
                 new MenuBar.Menu.Builder(context.getResources().getString(Res.string.deselect_all)).onSelect(new Runnable() {
+                    @Override
                     public void run() {
                         mGridLayer.deselectOrCancelSelectMode();
                     }
@@ -194,6 +206,7 @@ public final class HudLayer extends Layer {
         mFullscreenMenu.setMenus(new MenuBar.Menu[] {
                 new MenuBar.Menu.Builder(context.getResources().getString(Res.string.slideshow)).icon(Res.drawable.icon_play)
                         .onSingleTapUp(new Runnable() {
+                            @Override
                             public void run() {
                                 if (getAlpha() == 1.0f)
                                     mGridLayer.startSlideshow();
@@ -203,6 +216,7 @@ public final class HudLayer extends Layer {
                         }).build(), /* new MenuBar.Menu.Builder("").build(), */
                 new MenuBar.Menu.Builder(context.getResources().getString(Res.string.menu)).icon(Res.drawable.icon_more)
                         .onSingleTapUp(new Runnable() {
+                            @Override
                             public void run() {
                                 if (getAlpha() == 1.0f)
                                     mGridLayer.enterSelectionMode();
@@ -258,6 +272,7 @@ public final class HudLayer extends Layer {
 
         Option[] optionAll = new Option[] { new PopupMenu.Option(mContext.getResources().getString(Res.string.details), mContext
                 .getResources().getDrawable(Res.drawable.ic_menu_view_details), new Runnable() {
+            @Override
             public void run() {
                 ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                 final AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
@@ -279,6 +294,7 @@ public final class HudLayer extends Layer {
                 if (foundDataToDisplay) {
                     builder.setNeutralButton(Res.string.details_ok, null);
                     App.get(mContext).getHandler().post(new Runnable() {
+                        @Override
                         public void run() {
                             builder.show();
                         }
@@ -289,6 +305,7 @@ public final class HudLayer extends Layer {
 
         Option[] optionSingle = new Option[] { new PopupMenu.Option(mContext.getResources().getString(Res.string.show_on_map),
                 mContext.getResources().getDrawable(Res.drawable.ic_menu_mapmode), new Runnable() {
+                    @Override
                     public void run() {
                         ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                         MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
@@ -303,12 +320,14 @@ public final class HudLayer extends Layer {
         Option[] optionImageMultiple = new Option[] {
                 new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_left), mContext.getResources()
                         .getDrawable(Res.drawable.ic_menu_rotate_left), new Runnable() {
+                    @Override
                     public void run() {
                         mGridLayer.rotateSelectedItems(-90.0f);
                     }
                 }),
                 new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_right), mContext.getResources()
                         .getDrawable(Res.drawable.ic_menu_rotate_right), new Runnable() {
+                    @Override
                     public void run() {
                         mGridLayer.rotateSelectedItems(90.0f);
                     }
@@ -321,6 +340,7 @@ public final class HudLayer extends Layer {
         if (isPicasa) {
             optionImageSingle = new Option[] { new PopupMenu.Option(mContext.getResources().getString(Res.string.set_as_wallpaper),
                     mContext.getResources().getDrawable(Res.drawable.ic_menu_set_as), new Runnable() {
+                        @Override
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
@@ -342,6 +362,7 @@ public final class HudLayer extends Layer {
                     new PopupMenu.Option((isPicasa) ? mContext.getResources().getString(Res.string.set_as_wallpaper) : mContext
                             .getResources().getString(Res.string.set_as), mContext.getResources().getDrawable(
                             Res.drawable.ic_menu_set_as), new Runnable() {
+                        @Override
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
@@ -365,6 +386,7 @@ public final class HudLayer extends Layer {
                     }),
                     new PopupMenu.Option(mContext.getResources().getString(Res.string.crop), mContext.getResources().getDrawable(
                             Res.drawable.ic_menu_crop), new Runnable() {
+                        @Override
                         public void run() {
                             ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
                             MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
@@ -403,7 +425,7 @@ public final class HudLayer extends Layer {
     }
 
     private static final Option[] concat(Option[] A, Option[] B) {
-        Option[] C = (Option[]) new Option[A.length + B.length];
+        Option[] C = new Option[A.length + B.length];
         System.arraycopy(A, 0, C, 0, A.length);
         System.arraycopy(B, 0, C, A.length, B.length);
         return C;
@@ -574,10 +596,12 @@ public final class HudLayer extends Layer {
         return (mAnimAlpha != mAlpha);
     }
 
+    @Override
     public void renderOpaque(RenderView view, GL11 gl) {
 
     }
 
+    @Override
     public void renderBlended(RenderView view, GL11 gl) {
         view.setAlpha(mAnimAlpha);
     }
@@ -595,6 +619,7 @@ public final class HudLayer extends Layer {
         if (alpha == 1.0f) {
             mLastTimeFullOpacity = System.currentTimeMillis();
             App.get(mContext).getHandler().postDelayed(new Runnable() {
+                @Override
                 public void run() {
                     if (mView != null) {
                         mView.requestRender();
@@ -771,6 +796,7 @@ public final class HudLayer extends Layer {
                 final ResolveInfo info = activities.get(i);
                 String label = info.loadLabel(packageManager).toString();
                 options[i] = new PopupMenu.Option(label, info.loadIcon(packageManager), new Runnable() {
+                    @Override
                     public void run() {
                         startResolvedActivity(intent, info);
                     }
@@ -785,6 +811,7 @@ public final class HudLayer extends Layer {
         ActivityInfo ai = info.activityInfo;
         resolvedIntent.setComponent(new ComponentName(ai.applicationInfo.packageName, ai.name));
         App.get(mContext).getHandler().post(new Runnable() {
+            @Override
             public void run() {
                 mContext.startActivity(resolvedIntent);
             }

@@ -75,6 +75,7 @@ public class BackgroundLayer extends Layer {
         if (item == null) {
             return mFallbackBackground;
         }
+        //这里可能是取得缩略图的地方？
         Texture itemThumbnail = item.getThumbnailImage(view.getContext(), null);
         if (item == null || itemThumbnail == null || !itemThumbnail.isLoaded()) {
             return mFallbackBackground;

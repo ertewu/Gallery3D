@@ -40,16 +40,25 @@ public final class Gallery extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		mApp = new App(Gallery.this);
-		
+
 		mRenderView = new RenderView(this);
+
+
+		//96,72是用来设定每个item的大小的，起码变成48和36会有明显区别
 		mGridLayer = new GridLayer(this, (int) (96.0f * App.PIXEL_DENSITY),
 				(int) (72.0f * App.PIXEL_DENSITY), new GridLayoutInterface(4),
 				mRenderView);
+
+//	      mGridLayer = new GridLayer(this, (int) (48.0f * App.PIXEL_DENSITY),
+//	                (int) (36.0f * App.PIXEL_DENSITY), new GridLayoutInterface(4),
+//	                mRenderView);
+
+
 		mRenderView.setRootLayer(mGridLayer);
 		setContentView(mRenderView);
 		initializeDataSource();
 		Log.i(TAG, "onCreate");
-		
+
 	}
 
 	@Override
@@ -165,7 +174,7 @@ public final class Gallery extends Activity {
 			//是以android.intent.action.Main 走进来的，从以前的代码来看，不同的action还对应不同的source源呢，这一下可没少删除代码..
 		localDataSource.setMimeFilter(true, true);
 	    mGridLayer.setDataSource(combinedDataSource);
-			
+
 		// We record the set of enabled accounts for picasa.
 	}
 }

@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.text.DateFormat;
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import android.app.IntentService;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -61,14 +59,13 @@ import com.cooliris.app.Res;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
 import com.cooliris.media.Gallery;
+import com.cooliris.media.LocalDataSource;
 import com.cooliris.media.LongSparseArray;
 import com.cooliris.media.MediaFeed;
 import com.cooliris.media.MediaItem;
 import com.cooliris.media.MediaSet;
 import com.cooliris.media.Shared;
-import com.cooliris.media.LocalDataSource;
 import com.cooliris.media.SortCursor;
-import com.cooliris.media.UriTexture;
 import com.cooliris.media.Utils;
 
 public final class CacheService extends IntentService {
@@ -150,6 +147,7 @@ public final class CacheService extends IntentService {
 
     private static final DateFormat mDateFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
     private static final DateFormat mAltDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    //dummy是假的，伪装的意思，伪装的意思更明显吧
     private static final byte[] sDummyData = new byte[] { 1 };
     private static final Object sCacheLock = new Object();
 
@@ -339,7 +337,7 @@ public final class CacheService extends IntentService {
                     item.mDateAddedInSec = dis.readLong();
                     item.mDateModifiedInSec = dis.readLong();
                     item.mDurationInSec = dis.readInt();
-                    item.mRotation = (float) dis.readInt();
+                    item.mRotation = dis.readInt();
                     item.mFilePath = Utils.readUTF(dis);
 
                     // We are done reading. Now lets check to see if this item
@@ -582,6 +580,7 @@ public final class CacheService extends IntentService {
             Bitmap bitmap = null;
             Thread.sleep(1);
             new Thread() {
+                @Override
                 public void run() {
                     try {
                         Thread.sleep(5000);
@@ -775,6 +774,7 @@ public final class CacheService extends IntentService {
     private static final void restartThread(final AtomicReference<Thread> threadRef, final String name, final Runnable action) {
         // Create a new thread.
         final Thread newThread = new Thread() {
+            @Override
             public void run() {
                 try {
                     action.run();
@@ -795,6 +795,7 @@ public final class CacheService extends IntentService {
 
     public static final void startNewThumbnailThread(final Context context) {
         restartThread(THUMBNAIL_THREAD, "ThumbnailRefresh", new Runnable() {
+            @Override
             public void run() {
                 Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                 try {
@@ -810,7 +811,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final byte[] concat(final byte[] A, final byte[] B) {
-        final byte[] C = (byte[]) new byte[A.length + B.length];
+        final byte[] C = new byte[A.length + B.length];
         System.arraycopy(A, 0, C, 0, A.length);
         System.arraycopy(B, 0, C, A.length, B.length);
         return C;
@@ -938,6 +939,9 @@ public final class CacheService extends IntentService {
         }
     }
 
+    /**
+     *这个函数用于检查是否有新的相册 ，这个我真是不特别懂..
+     */
     public static final long[] computeDirtySets(final Context context) {
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
         final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
@@ -950,6 +954,7 @@ public final class CacheService extends IntentService {
             Cursor[] cursors = new Cursor[2];
             cursors[0] = cursorImages;
             cursors[1] = cursorVideos;
+            //操？还可以这样玩的..mergeCursor..
             final MergeCursor cursor = new MergeCursor(cursors);
             final ArrayList<Long> setIds = new ArrayList<Long>();
             final ArrayList<Long> maxAdded = new ArrayList<Long>();

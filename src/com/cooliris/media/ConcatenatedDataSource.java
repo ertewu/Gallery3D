@@ -28,10 +28,12 @@ public final class ConcatenatedDataSource implements DataSource {
         mFirst = first;
     }
 
+    @Override
     public void loadMediaSets(final MediaFeed feed) {
         mFirst.loadMediaSets(feed);
     }
 
+    @Override
     public void loadItemsForSet(final MediaFeed feed, final MediaSet parentSet, int rangeStart, int rangeEnd) {
         if (parentSet != null) {
             DataSource dataSource = parentSet.mDataSource;
@@ -43,6 +45,7 @@ public final class ConcatenatedDataSource implements DataSource {
         }
     }
 
+    @Override
     public boolean performOperation(int operation, final ArrayList<MediaBucket> mediaBuckets, Object data) {
         ArrayList<MediaBucket> singleBucket = new ArrayList<MediaBucket>(1);
         singleBucket.add(null);
@@ -64,21 +67,29 @@ public final class ConcatenatedDataSource implements DataSource {
         return retVal;
     }
 
+    @Override
     public DiskCache getThumbnailCache() {
         throw new UnsupportedOperationException("ConcatenatedDataSource should not create MediaItems");
     }
 
+    @Override
     public void shutdown() {
         mFirst.shutdown();
     }
-    
+
+    /**
+     * 第一次load应用时,databaseUris 里有两个值
+     * [content://media/external/images/media, content://media/external/video/media]
+     */
+    @Override
     public void refresh(final MediaFeed feed, final String[] databaseUris) {
         mFirst.refresh(feed, databaseUris);
     }
-    
+
+    @Override
     public String[] getDatabaseUris() {
         String[] first = mFirst.getDatabaseUris();
         // We concatenate
-        return (String[])ArrayUtils.addAll(first, null);
+        return ArrayUtils.addAll(first, null);
     }
 }

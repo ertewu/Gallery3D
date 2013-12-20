@@ -64,6 +64,7 @@ public final class Shared {
         }
     }
 
+    //clamp是夹紧，固定住的意思？
     public static int clamp(int value, int min, int max) {
         if (value < min) {
             value = min;

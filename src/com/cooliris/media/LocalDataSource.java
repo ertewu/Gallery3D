@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.List;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -45,11 +44,13 @@ public class LocalDataSource implements DataSource {
 
     public static final String CAMERA_STRING = "Camera";
     public static final String DOWNLOAD_STRING = "download";
+    //这个是我的相机里的照片的文件夹
     public static final String CAMERA_BUCKET_NAME = Environment.getExternalStorageDirectory().toString() + "/DCIM/" + CAMERA_STRING;
+    //这是我sdcard/download文件夹
     public static final String DOWNLOAD_BUCKET_NAME = Environment.getExternalStorageDirectory().toString() + "/" + DOWNLOAD_STRING;
     public static final int CAMERA_BUCKET_ID = getBucketId(CAMERA_BUCKET_NAME);
     public static final int DOWNLOAD_BUCKET_ID = getBucketId(DOWNLOAD_BUCKET_NAME);
-    
+
     /**
      * Matches code in MediaProvider.computeBucketValues. Should be a common
      * function.
@@ -57,7 +58,7 @@ public class LocalDataSource implements DataSource {
     public static int getBucketId(String path) {
         return (path.toLowerCase().hashCode());
     }
-    
+
     private final String mUri;
     private final String mBucketId;
     private boolean mDone;;
@@ -74,6 +75,8 @@ public class LocalDataSource implements DataSource {
         mContext = context;
         mIncludeImages = true;
         mIncludeVideos = false;
+        Log.i("ertewu2", "localDataSource r78:"+uri+"|"+Uri.parse(uri).getQueryParameter("bucketId"));
+        //12-17 19:47:14.762: I/ertewu(7767): localDataSource r78:content://media/external/images/media|null
         String bucketId = Uri.parse(uri).getQueryParameter("bucketId");
         if (bucketId != null && bucketId.length() > 0) {
             mBucketId = bucketId;
@@ -90,19 +93,30 @@ public class LocalDataSource implements DataSource {
         } else {
             mAllItems = false;
         }
+        //mSingleUri is false
         mSingleUri = isSingleImageMode(uri) && mBucketId == null;
+        Log.i("ertewu2", "r98 mSingleUri:"+mSingleUri);
         mDone = false;
+
+
+        Log.i("ertewu2", "r102 Uri:"
+                + MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString()
+                + "\n" + MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString());
+
+        //在nexus4以及我的手机上,是符合MediaStore.Images.Media.EXTERNAL_CONTENT_URI这个要求的，则是sThumbnailCache
         mDiskCache = mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
                 || mUri.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString())
                 || mUri.startsWith("file://") ? sThumbnailCache
                 : null;
+        Log.i("ertewu2", "r103:"+mDiskCache);
     }
-    
+
     public void setMimeFilter(boolean includeImages, boolean includeVideos) {
         mIncludeImages = includeImages;
         mIncludeVideos = includeVideos;
     }
 
+    @Override
     public void shutdown() {
 
     }
@@ -112,14 +126,17 @@ public class LocalDataSource implements DataSource {
     }
 
     private static boolean isSingleImageMode(String uriString) {
+        //是等于MediaStore.Images.Media.EXTERNAL_CONTENT_URI的
         return !uriString.equals(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
                 && !uriString.equals(MediaStore.Images.Media.INTERNAL_CONTENT_URI.toString());
     }
 
+    @Override
     public DiskCache getThumbnailCache() {
         return mDiskCache;
     }
 
+    @Override
     public void loadItemsForSet(MediaFeed feed, MediaSet parentSet, int rangeStart, int rangeEnd) {
         if (parentSet.mNumItemsLoaded > 0 && mDone) {
             return;
@@ -231,6 +248,7 @@ public class LocalDataSource implements DataSource {
         return !uriString.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString());
     }
 
+    @Override
     public void loadMediaSets(final MediaFeed feed) {
         MediaSet set = null; // Dummy set.
         boolean loadOtherSets = true;
@@ -279,6 +297,7 @@ public class LocalDataSource implements DataSource {
         }
     }
 
+    @Override
     public boolean performOperation(int operation, ArrayList<MediaBucket> mediaBuckets, Object data) {
         int numBuckets = mediaBuckets.size();
         ContentResolver cr = mContext.getContentResolver();
@@ -375,7 +394,7 @@ public class LocalDataSource implements DataSource {
             // System.out.println("Apparently not a JPEG");
         }
     }
-    
+
     public static MediaItem createMediaItemFromUri(Context context, Uri target, int mediaType) {
         MediaItem item = null;
         long id = ContentUris.parseId(target);
@@ -428,15 +447,23 @@ public class LocalDataSource implements DataSource {
         }
         return item;
     }
-    
+
+    /**
+     * 这是固定的两个URI,说明LocalDataSource的数据来源是固定的，写死的
+     */
+    @Override
     public String[] getDatabaseUris() {
         return new String[] {Images.Media.EXTERNAL_CONTENT_URI.toString(), Video.Media.EXTERNAL_CONTENT_URI.toString()};
     }
 
+    /**这里是真正沿着数据刷新内容的地方?用uri,但我想知道他妈的databaseUris 在哪里用到了？*/
+    @Override
     public void refresh(final MediaFeed feed, final String[] databaseUris) {
         // We check to see what has changed.
         long[] ids = CacheService.computeDirtySets(mContext);
         int numDirtySets = ids.length;
+        //第一次这里是19,这是个什么东西呢？
+        Log.i("ertewu", "LocalDataSource numDirtySet is:"+numDirtySets);
         for (int i = 0; i < numDirtySets; ++i) {
             long setId = ids[i];
             if (feed.getMediaSet(setId) != null) {

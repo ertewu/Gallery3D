@@ -47,6 +47,7 @@ public class Utils {
     public static void playVideo(final Context context, final MediaItem item) {
         // this is a video
         App.get(context).getHandler().post(new Runnable() {
+            @Override
             public void run() {
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(item.mContentUri));
@@ -107,7 +108,7 @@ public class Utils {
 
     /**
      * A function thats returns a 64-bit crc for string
-     * 
+     *
      * @param in
      *            : input string
      * @return 64-bit crc value
@@ -142,7 +143,7 @@ public class Utils {
 
     /**
      * A function that returns a human readable hex string of a Crx64
-     * 
+     *
      * @param in
      *            : input string
      * @return hex string of the 64-bit CRC value
@@ -241,7 +242,7 @@ public class Utils {
         OutputStream out = new FileOutputStream(dst);
         copyStream(in, out);
     }
-    
+
     public static void copyStream(InputStream in, OutputStream out) throws IOException {
         // Transfer bytes from in to out
         byte[] buf = new byte[1024];

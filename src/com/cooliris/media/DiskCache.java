@@ -27,9 +27,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import com.cooliris.cache.CacheService;
-
 import android.util.Log;
+
+import com.cooliris.cache.CacheService;
 
 public final class DiskCache {
     private static final String TAG = "DiskCache";
@@ -251,9 +251,11 @@ public final class DiskCache {
             // Read the entries.
             if (valid) {
                 // Parse the index file body into the in-memory map.
+                //这个数值竟然用来形成一个循环数
                 final int numEntries = dataInput.readInt();
                 mIndexMap = new LongSparseArray<Record>(numEntries);
                 synchronized (mIndexMap) {
+                    //很显然，这里关于DataInputStream的 这些函数，我都不太懂..目前为止制约了我懂这里的知识
                     for (int i = 0; i < numEntries; ++i) {
                         final long key = dataInput.readLong();
                         final int chunk = dataInput.readShort();

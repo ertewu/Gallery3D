@@ -16,8 +16,6 @@
 
 package com.cooliris.media;
 
-import java.util.ArrayList;
-
 import com.cooliris.app.App;
 
 public final class GridLayoutInterface extends LayoutInterface {
@@ -26,7 +24,7 @@ public final class GridLayoutInterface extends LayoutInterface {
         mSpacingX = (int) (20 * App.PIXEL_DENSITY);
         mSpacingY = (int) (40 * App.PIXEL_DENSITY);
     }
-    
+
     public float getSpacingForBreak() {
         return mSpacingX / 2;
     }
@@ -40,6 +38,8 @@ public final class GridLayoutInterface extends LayoutInterface {
         return breakSlotIndex + add;
     }
 
+
+    @Override
     public void getPositionForSlotIndex(int slotIndex, int itemWidth, int itemHeight, Vector3f outPosition) {
         int numRows = mNumRows;
         int resultSlotIndex = slotIndex;

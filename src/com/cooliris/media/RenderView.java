@@ -16,6 +16,15 @@
 
 package com.cooliris.media;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+import javax.microedition.khronos.opengles.GL11;
+import javax.microedition.khronos.opengles.GL11Ext;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -34,15 +43,6 @@ import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
-
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-import javax.microedition.khronos.opengles.GL11;
-import javax.microedition.khronos.opengles.GL11Ext;
 
 public final class RenderView extends GLSurfaceView implements GLSurfaceView.Renderer, SensorEventListener {
     private static final String TAG = "RenderView";
@@ -480,6 +480,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         // Destroy any textures that are no longer referenced.
         GL11 gl = mGL;
         TextureReference textureReference;
+        //强转了的
         while ((textureReference = (TextureReference) mUnreferencedTextureQueue.poll()) != null) {
             textureId[0] = textureReference.textureId;
             GL11 glOld = textureReference.gl;
@@ -554,7 +555,6 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
         } else {
             texture.mState = Texture.STATE_ERROR;
         }
-
     }
 
     @Override
@@ -585,6 +585,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
 
     /** Renders a frame of the UI. */
     // @Override
+    @Override
     public void onDrawFrame(GL10 gl1) {
 
         if (ENABLE_FPS_TEST) {
@@ -787,6 +788,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
      * Called when the OpenGL surface is recreated without destroying the
      * context.
      */
+    @Override
     public void onSurfaceChanged(GL10 gl1, int width, int height) {
         GL11 gl = (GL11) gl1;
         mFirstDraw = false;
@@ -822,6 +824,7 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     /**
      * Called when the context is created, possibly after automatic destruction.
      */
+    @Override
     public void onSurfaceCreated(GL10 gl1, EGLConfig config) {
         // Clear the resource texture cache.
         clearCache();
@@ -906,10 +909,12 @@ public final class RenderView extends GLSurfaceView implements GLSurfaceView.Ren
     }
 
     /** Indicates that the accuracy of a sensor value has changed. */
+    @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
     /** Indicates that a sensor value has changed. */
+    @Override
     public void onSensorChanged(SensorEvent event) {
         final int type = event.sensor.getType();
         if (!mPendingSensorEvent && type == Sensor.TYPE_ACCELEROMETER) {

@@ -101,7 +101,7 @@ public class MediaSet {
         mItemsLookupVideo = new LongSparseArray<MediaItem>();
         mItemsLookupVideo.clear();
         mDataSource = dataSource;
-        // TODO(Venkat): Can we move away from this dummy item setup?
+        // TODO(Venkat): Can we move away from this dummy item setup? 意思是说这个item是个假的？
         MediaItem item = new MediaItem();
         item.mId = Shared.INVALID;
         item.mParentMediaSet = this;
@@ -176,7 +176,7 @@ public class MediaSet {
     /**
      * Adds a MediaItem to this set, and increments the load count.
      * Additionally, it also recomputes the location bounds and time range of
-     * the media set.
+     * the media set. 这个item她妈的真正的长啊..
      */
     public void addItem(final MediaItem itemToAdd) {
         // Important to not set the parentMediaSet in here as temporary
@@ -260,7 +260,7 @@ public class MediaSet {
 
     /**
      * Removes a MediaItem if present in the MediaSet.
-     * 
+     *
      * @return true if the item was removed, false if removal failed or item was
      *         not present in the set.
      */

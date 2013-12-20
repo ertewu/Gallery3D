@@ -18,6 +18,9 @@ package com.cooliris.media;
 
 import java.util.Date;
 
+/**
+ * MediaItem的构造函数非常简单，另我感觉可怕的是，这个类的字段都是public的，我他妈的怎么跟踪..
+ */
 public final class MediaItem {
     public static final int MEDIA_TYPE_IMAGE = 0;
     public static final int MEDIA_TYPE_VIDEO = 1;
