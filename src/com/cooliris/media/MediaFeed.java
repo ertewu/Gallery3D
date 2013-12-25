@@ -65,12 +65,12 @@ public final class MediaFeed implements Runnable {
     private boolean mSingleImageMode;
     private boolean mLoading;
     private HashMap<String, ContentObserver> mContentObservers = new HashMap<String, ContentObserver>();
-    /**这是一个二维的数组？*/
+    /** 这是一个二维的数组？ */
     private ArrayList<String[]> mRequestedRefreshUris = new ArrayList<String[]>();
     private volatile boolean mIsShutdown = false;
 
     /**
-     *GridLayer实现了这个接口，这个接口看样子是很有用的，却没有注释..GridLayer里边的onFeedChanged实现了超级多的东西
+     * GridLayer实现了这个接口，这个接口看样子是很有用的，却没有注释..GridLayer里边的onFeedChanged实现了超级多的东西
      */
     public interface Listener {
         public abstract void onFeedAboutToChange(MediaFeed feed);
@@ -255,7 +255,7 @@ public final class MediaFeed implements Runnable {
         }
         Thread operationThread = new Thread(new Runnable() {
             @Override
-			public void run() {
+            public void run() {
                 ArrayList<MediaBucket> mediaBuckets = copyMediaBuckets;
                 if (operation == OPERATION_DELETE) {
                     int numBuckets = mediaBuckets.size();
@@ -422,18 +422,17 @@ public final class MediaFeed implements Runnable {
         return mLoading;
     }
 
-
     public void start() {
         final MediaFeed feed = this;
         onResume();
         mLoading = true;
-        //this是指runnable
+        // this是指runnable
         mDataSourceThread = new Thread(this);
         mDataSourceThread.setName("MediaFeed");
         mIsShutdown = false;
         mAlbumSourceThread = new Thread(new Runnable() {
             @Override
-			public void run() {
+            public void run() {
                 if (mContext == null)
                     return;
                 Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
@@ -462,7 +461,7 @@ public final class MediaFeed implements Runnable {
                     }
                 }
                 if (mWaitingForMediaScanner) {
-                    //第一次开程序时，一直都在显示这个文字，就是loading_new这个
+                    // 第一次开程序时，一直都在显示这个文字，就是loading_new这个
                     showToast(mContext.getResources().getString(Res.string.loading_new), Toast.LENGTH_LONG);
                     mWaitingForMediaScanner = false;
                     loadMediaSets();
@@ -474,7 +473,7 @@ public final class MediaFeed implements Runnable {
         mAlbumSourceThread.start();
     }
 
-    //这个地方是在一开始去load数据的地方，是有一定时间的,但也不是很多，在s2上，只有600ms
+    // 这个地方是在一开始去load数据的地方，是有一定时间的,但也不是很多，在s2上，只有600ms
     private void loadMediaSets() {
         if (mDataSource == null)
             return;
@@ -512,7 +511,7 @@ public final class MediaFeed implements Runnable {
         if (mContext != null && !App.get(mContext).isPaused()) {
             App.get(mContext).getHandler().post(new Runnable() {
                 @Override
-				public void run() {
+                public void run() {
                     if (mContext != null) {
                         Toast toast = Toast.makeText(mContext, string, duration);
                         if (centered) {
@@ -526,7 +525,7 @@ public final class MediaFeed implements Runnable {
     }
 
     @Override
-	public void run() {
+    public void run() {
         DataSource dataSource = mDataSource;
         int sleepMs = 10;
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
@@ -554,7 +553,14 @@ public final class MediaFeed implements Runnable {
                             }
                         }
                         databaseUris = new String[0];
+                        // 这里实际上是把相同的uri过滤出去了..最终这里边也就是media与viedo这两个uri
                         databaseUris = uris.keySet().toArray(databaseUris);
+                        StringBuilder join = new StringBuilder();
+                        for (int i = 0; i < databaseUris.length; i++) {
+                            join.append(databaseUris[i] + ",");
+                        }
+                        Log.i("ertewu", "r559 " + Thread.currentThread().getName() + " " + Thread.currentThread().getId() + ":"
+                                + join);
                     }
                 }
                 boolean settingFeedAboutToChange = false;
@@ -915,7 +921,7 @@ public final class MediaFeed implements Runnable {
     public void refresh() {
         if (mDataSource != null) {
             synchronized (mRequestedRefreshUris) {
-                //是因为一个datasource，可能会有好几个固定的uri，所以才要二维数组的？
+                // 是因为一个datasource，可能会有好几个固定的uri，所以才要二维数组的？
                 mRequestedRefreshUris.add(mDataSource.getDatabaseUris());
             }
         }
@@ -924,7 +930,7 @@ public final class MediaFeed implements Runnable {
     private void refresh(final String[] databaseUris) {
         synchronized (mMediaSets) {
             if (mDataSource != null) {
-                //还要sync，这看样子挺严重的
+                // 还要sync，这看样子挺严重的
                 synchronized (mRequestedRefreshUris) {
                     mRequestedRefreshUris.add(databaseUris);
                 }
@@ -977,14 +983,14 @@ public final class MediaFeed implements Runnable {
                 final int numUris = uris.length;
                 for (int i = 0; i < numUris; ++i) {
                     final String uri = uris[i];
-                    //取到了一个URI所对应的ContentObserver,如果是空，其实是给对应的URI创建了一个ContentObserver
+                    // 取到了一个URI所对应的ContentObserver,如果是空，其实是给对应的URI创建了一个ContentObserver
                     final ContentObserver presentObserver = observers.get(uri);
                     if (presentObserver == null) {
                         final Handler handler = App.get(context).getHandler();
                         final ContentObserver observer = new ContentObserver(handler) {
                             @Override
-							public void onChange(boolean selfChange) {
-                                //所谓refresh，就是把这个URI加进mRequestedRefresh这个string二维数组里边去了,但是为什么非要用数组，还不甚了解
+                            public void onChange(boolean selfChange) {
+                                // 所谓refresh，就是把这个URI加进mRequestedRefresh这个string二维数组里边去了,但是为什么非要用数组，还不甚了解
                                 if (!mWaitingForMediaScanner) {
                                     MediaFeed.this.refresh(new String[] { uri });
                                 }
