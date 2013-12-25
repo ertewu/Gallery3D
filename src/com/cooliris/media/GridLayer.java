@@ -439,8 +439,8 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mMediaFeed = new MediaFeed(mContext, dataSource, this);
         if (feed != null) {
             // Restore the slot state in the original feed before shutting it down.
+            //这不是在给自己restore么
             mMediaFeed.copySlotStateFrom(feed);
-
             feed.shutdown();
             mDisplayList.clear();
             getBackgroundLayer().clear();

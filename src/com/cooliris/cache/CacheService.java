@@ -70,6 +70,7 @@ import com.cooliris.media.Utils;
 
 public final class CacheService extends IntentService {
     public static final String ACTION_CACHE = "com.cooliris.cache.action.CACHE";
+    //mediaSet都是从这个diskCache里边去找的
     public static final DiskCache sAlbumCache = new DiskCache("local-album-cache");
     public static final DiskCache sMetaAlbumCache = new DiskCache("local-meta-cache");
     public static final DiskCache sSkipThumbnailIds = new DiskCache("local-skip-cache");
@@ -217,6 +218,7 @@ public final class CacheService extends IntentService {
         final StringBuffer whereString = new StringBuffer(Images.ImageColumns.BUCKET_ID + "=" + setId);
         try {
             final Cursor cursorImages = cr.query(uriImages, BUCKET_PROJECTION_IMAGES, whereString.toString(), null, null);
+            //按照春哥说的，这里应该会有cursorImage 不关闭的情况，得用finally 关闭cursor,
             if (cursorImages != null && cursorImages.getCount() > 0) {
                 cursorImages.close();
                 return true;
@@ -242,9 +244,11 @@ public final class CacheService extends IntentService {
             final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
             try {
                 final int numAlbums = dis.readInt();
+                Log.i("ertewu", "CacheService loadMediaSets numAlbums:"+numAlbums);
                 for (int i = 0; i < numAlbums; ++i) {
                     final long setId = dis.readLong();
                     final String name = Utils.readUTF(dis);
+                    Log.i("ertewu", "CacheSercie r251 loop "+i+":"+setId+"|"+name);
                     final boolean hasImages = dis.readBoolean();
                     final boolean hasVideos = dis.readBoolean();
                     MediaSet mediaSet = feed.getMediaSet(setId);
@@ -275,6 +279,9 @@ public final class CacheService extends IntentService {
         }
     }
 
+    /**
+     * 这个loadMediaSet与上边的loadMediaSets的明显区别是，我操只是 loadMediaSet是从一堆MediaSet中去找bucketId匹配的那个.,如果没有匹配还要生成一个新的..
+     */
     public static final void loadMediaSet(final Context context, final MediaFeed feed, final DataSource source, final long bucketId) {
         syncCache(context);
         final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
@@ -704,6 +711,7 @@ public final class CacheService extends IntentService {
             putLocaleForAlbumCache(Locale.getDefault());
         }
         Locale locale = getLocaleForAlbumCache();
+        //这里是检测地点语言等信息，如果不符合，把以前的cache都置为dirty
         if (locale != null && locale.equals(Locale.getDefault())) {
 
         } else {
@@ -723,6 +731,7 @@ public final class CacheService extends IntentService {
     private static final void putLocaleForAlbumCache(final Locale locale) {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
+        //这他妈是写哪去了？写哪去了？
         try {
             Utils.writeUTF(dos, locale.getCountry());
             Utils.writeUTF(dos, locale.getLanguage());
@@ -940,7 +949,9 @@ public final class CacheService extends IntentService {
     }
 
     /**
-     *这个函数用于检查是否有新的相册 ，这个我真是不特别懂..呵呵
+     * 这个函数用于检查是否有新的相册 ,最终为止是把一堆setId返回去了<br>
+     * 而setId是 uriImages与uriVideo中的 Images.ImageColumns.BUCKET_ID字段
+     * 说白了，是作bucketId 是否dirty的动作？ 也就是是否初始化一个新的bucketId?
      */
     public static final long[] computeDirtySets(final Context context) {
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;

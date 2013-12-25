@@ -238,6 +238,8 @@ public final class MediaBucketList {
         mDirtyAcceleratedLookup = true;
     }
 
+    /******************************下边是一堆is************************************/
+
     // Assumption: No item and set selection combinations.
     protected static boolean isSetSelection(ArrayList<MediaBucket> buckets) {
         if (buckets != null) {

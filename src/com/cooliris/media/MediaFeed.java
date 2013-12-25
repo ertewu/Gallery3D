@@ -53,6 +53,7 @@ public final class MediaFeed implements Runnable {
     private boolean mMediaFeedNeedsToRun = false;
     private MediaSet mSingleWrapper = new MediaSet();
     private boolean mInClusteringMode = false;
+    //这个是干什么的，不太懂的..
     private HashMap<MediaSet, MediaClustering> mClusterSets = new HashMap<MediaSet, MediaClustering>(32);
     private int mExpandedMediaSetIndex = Shared.INVALID;
     private MediaFilter mMediaFilter;
@@ -86,6 +87,7 @@ public final class MediaFeed implements Runnable {
         mLoading = true;
     }
 
+    //shutdown 只是把各种运行时数据全清空了
     public void shutdown() {
         mIsShutdown = true;
         if (mDataSourceThread != null) {

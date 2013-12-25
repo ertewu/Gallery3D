@@ -41,6 +41,7 @@ public final class DiskCache {
     private final String mCacheDirectoryPath;
     private LongSparseArray<Record> mIndexMap;
     private final LongSparseArray<RandomAccessFile> mChunkFiles = new LongSparseArray<RandomAccessFile>();
+    //他妈的，什么是个thunk?这个太麻烦了..
     private int mTailChunk = 0;
     private int mNumInsertions = 0;
 
