@@ -30,6 +30,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 import com.cooliris.app.App;
+import com.cooliris.app.LogUtils;
 import com.cooliris.app.Res;
 
 public final class GridLayer extends RootLayer implements MediaFeed.Listener, TimeBar.Listener {
@@ -238,6 +239,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     public void setState(int state) {
         boolean feedUnchanged = false;
         mCamera.mFriction = 0.0f;
+        //看好了，mState与state是俩个东西
         if (mState == state) {
             feedUnchanged = true;
         }
@@ -922,6 +924,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     // called on background thread
     @Override
     public synchronized void onFeedChanged(MediaFeed feed, boolean needsLayout) {
+        LogUtils.printStackTrace(null);
         if (!needsLayout && !mFeedAboutToChange) {
             mFeedChanged = true;
             forceRecomputeVisibleRange();

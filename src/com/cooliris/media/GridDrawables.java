@@ -82,7 +82,7 @@ public final class GridDrawables {
     public GridDrawables(final int itemWidth, final int itemHeight) {
         if (sGrid == null) {
             final float height = 1.0f;
-            final float width = (float) (height * itemWidth) / (float) itemHeight;
+            final float width = height * itemWidth / itemHeight;
             final float aspectRatio = (float) itemWidth / (float) itemHeight;
             final float oneByAspect = 1.0f / aspectRatio;
 
@@ -112,9 +112,9 @@ public final class GridDrawables {
 
             // We create the quad for the text label.
             float seedTextWidth = (App.PIXEL_DENSITY < 1.5f) ? 128.0f : 256.0f;
-            float textWidth = (seedTextWidth / (float) itemWidth) * width;
+            float textWidth = (seedTextWidth / itemWidth) * width;
             float textHeightPow2 = (App.PIXEL_DENSITY < 1.5f) ? 32.0f : 64.0f;
-            float textHeight = (textHeightPow2 / (float) itemHeight) * height;
+            float textHeight = (textHeightPow2 / itemHeight) * height;
             float textOffsetY = 0.0f;
             sTextGrid = GridQuad.createGridQuad(textWidth, textHeight, 0, textOffsetY, 1.0f, 1.0f, false);
 
@@ -185,6 +185,10 @@ public final class GridDrawables {
         mTextureSpinner[7] = view.getResource(Res.drawable.ic_spinner8);
     }
 
+    /**
+     *iron_man实例里,log显示gridview那里一直都是false，也就是说不是setState那个调用了..
+     *也就是：drawBlendedComponents 这个的调用
+     */
     public int getIconForSet(MediaSet set, boolean scaled) {
         // We return the scaled version for HUD rendering and the unscaled
         // version for 3D rendering.
@@ -208,6 +212,7 @@ public final class GridDrawables {
             } else if (set.mId == LocalDataSource.CAMERA_BUCKET_ID) {
                 return Res.drawable.icon_camera_small_unscaled;
             } else {
+                //iron_man的返回肯定是这个..
                 return Res.drawable.icon_folder_small_unscaled;
             }
         }

@@ -34,6 +34,7 @@ import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
 import android.util.Log;
 
+import com.cooliris.app.LogUtils;
 import com.cooliris.cache.CacheService;
 
 public class LocalDataSource implements DataSource {
@@ -75,7 +76,7 @@ public class LocalDataSource implements DataSource {
         mContext = context;
         mIncludeImages = true;
         mIncludeVideos = false;
-        Log.i("ertewu2", "localDataSource r78:"+uri+"|"+Uri.parse(uri).getQueryParameter("bucketId"));
+        LogUtils.log("localDataSource r78:"+uri+"|"+Uri.parse(uri).getQueryParameter("bucketId"));
         //12-17 19:47:14.762: I/ertewu(7767): localDataSource r78:content://media/external/images/media|null
         String bucketId = Uri.parse(uri).getQueryParameter("bucketId");
         if (bucketId != null && bucketId.length() > 0) {
@@ -95,11 +96,11 @@ public class LocalDataSource implements DataSource {
         }
         //mSingleUri is false
         mSingleUri = isSingleImageMode(uri) && mBucketId == null;
-        Log.i("ertewu2", "r98 mSingleUri:"+mSingleUri);
+        LogUtils.log("r98 mSingleUri:"+mSingleUri);
         mDone = false;
 
 
-        Log.i("ertewu2", "r102 Uri:"
+        LogUtils.log("r102 Uri:"
                 + MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString()
                 + "\n" + MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString());
 
@@ -108,7 +109,7 @@ public class LocalDataSource implements DataSource {
                 || mUri.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString())
                 || mUri.startsWith("file://") ? sThumbnailCache
                 : null;
-        Log.i("ertewu2", "r103:"+mDiskCache);
+        LogUtils.log("r103:"+mDiskCache);
     }
 
     public void setMimeFilter(boolean includeImages, boolean includeVideos) {

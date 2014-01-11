@@ -39,6 +39,7 @@ import android.provider.MediaStore;
 import android.widget.Toast;
 
 import com.cooliris.app.App;
+import com.cooliris.app.LogUtils;
 import com.cooliris.app.Res;
 
 public class Utils {
@@ -172,6 +173,7 @@ public class Utils {
                 if (i != numPaths - 2)
                     string += "/";
             }
+            LogUtils.log("getBucketIdFrom Uri occured r176:"+"uri is:"+uri+"|string is:"+string);
             return LocalDataSource.getBucketId(string);
         } else {
             Cursor cursor = null;

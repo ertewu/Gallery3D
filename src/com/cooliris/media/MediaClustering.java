@@ -18,11 +18,10 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.text.format.DateFormat;
 import android.text.format.DateUtils;
-import android.content.Context;
-
-import android.content.res.Resources;
 
 import com.cooliris.app.App;
 import com.cooliris.app.Res;
@@ -32,7 +31,7 @@ import com.cooliris.app.Res;
  * certain time cutoff are grouped into the same cluster. Small adjacent
  * clusters are merged and large individual clusters are considered for
  * splitting.
- * 
+ *
  * TODO: Limitation: Can deal with items not being added incrementally to the
  * end of the current date range but effectively assumes this is the case for
  * efficient performance.
@@ -103,7 +102,7 @@ public final class MediaClustering {
     public void setTimeRange(long timeRange, int numItems) {
         if (numItems != 0) {
             int meanItemsPerCluster = numItems / NUM_CLUSTERS_TARGETED;
-            // Heuristic to get min and max cluster size - half and double the
+            // Heuristic(启发式的) to get min and max cluster size - half and double the
             // desired items per cluster.
             mMinClusterSize = meanItemsPerCluster / 2;
             mMaxClusterSize = meanItemsPerCluster * 2;
@@ -349,11 +348,13 @@ public final class MediaClustering {
             }
         }
 
+        @Override
         public void addItem(MediaItem item) {
             super.addItem(item);
             mClusterChanged = true;
         }
 
+        @Override
         public boolean removeItem(MediaItem item) {
             if (super.removeItem(item)) {
                 mClusterChanged = true;

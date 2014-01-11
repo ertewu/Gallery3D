@@ -55,6 +55,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.cooliris.app.App;
+import com.cooliris.app.LogUtils;
 import com.cooliris.app.Res;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
@@ -70,7 +71,7 @@ import com.cooliris.media.Utils;
 
 public final class CacheService extends IntentService {
     public static final String ACTION_CACHE = "com.cooliris.cache.action.CACHE";
-    //mediaSet都是从这个diskCache里边去找的
+    // mediaSet都是从这个diskCache里边去找的
     public static final DiskCache sAlbumCache = new DiskCache("local-album-cache");
     public static final DiskCache sMetaAlbumCache = new DiskCache("local-meta-cache");
     public static final DiskCache sSkipThumbnailIds = new DiskCache("local-skip-cache");
@@ -132,9 +133,9 @@ public final class CacheService extends IntentService {
             Images.ImageColumns.DATA, Images.ImageColumns.ORIENTATION, Images.ImageColumns.BUCKET_ID };
 
     public static final String[] PROJECTION_VIDEOS = new String[] { Video.VideoColumns._ID, Video.VideoColumns.TITLE,
-            Video.VideoColumns.MIME_TYPE, Video.VideoColumns.LATITUDE, Video.VideoColumns.LONGITUDE, Video.VideoColumns.DATE_TAKEN,
-            Video.VideoColumns.DATE_ADDED, Video.VideoColumns.DATE_MODIFIED, Video.VideoColumns.DATA, Video.VideoColumns.DURATION,
-            Video.VideoColumns.BUCKET_ID };
+            Video.VideoColumns.MIME_TYPE, Video.VideoColumns.LATITUDE, Video.VideoColumns.LONGITUDE,
+            Video.VideoColumns.DATE_TAKEN, Video.VideoColumns.DATE_ADDED, Video.VideoColumns.DATE_MODIFIED,
+            Video.VideoColumns.DATA, Video.VideoColumns.DURATION, Video.VideoColumns.BUCKET_ID };
 
     public static final String BASE_CONTENT_STRING_IMAGES = (Images.Media.EXTERNAL_CONTENT_URI).toString() + "/";
     public static final String BASE_CONTENT_STRING_VIDEOS = (Video.Media.EXTERNAL_CONTENT_URI).toString() + "/";
@@ -148,7 +149,7 @@ public final class CacheService extends IntentService {
 
     private static final DateFormat mDateFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
     private static final DateFormat mAltDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-    //dummy是假的，伪装的意思，伪装的意思更明显吧
+    // dummy是假的，伪装的意思，伪装的意思更明显吧
     private static final byte[] sDummyData = new byte[] { 1 };
     private static final Object sCacheLock = new Object();
 
@@ -168,7 +169,7 @@ public final class CacheService extends IntentService {
         context.startService(intent);
     }
 
-    public static final boolean isCacheReady(final boolean onlyMediaSets) {
+    private static final boolean isCacheReady(final boolean onlyMediaSets) {
         if (onlyMediaSets) {
             return (sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0) != null && sAlbumCache.get(ALBUM_CACHE_DIRTY_INDEX, 0) == null);
         } else {
@@ -212,29 +213,32 @@ public final class CacheService extends IntentService {
         }
     }
 
-    public static final boolean setHasItems(final ContentResolver cr, final long setId) {
-        final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
-        final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
-        final StringBuffer whereString = new StringBuffer(Images.ImageColumns.BUCKET_ID + "=" + setId);
-        try {
-            final Cursor cursorImages = cr.query(uriImages, BUCKET_PROJECTION_IMAGES, whereString.toString(), null, null);
-            //按照春哥说的，这里应该会有cursorImage 不关闭的情况，得用finally 关闭cursor,
-            if (cursorImages != null && cursorImages.getCount() > 0) {
-                cursorImages.close();
-                return true;
-            }
-            final Cursor cursorVideos = cr.query(uriVideos, BUCKET_PROJECTION_VIDEOS, whereString.toString(), null, null);
-            if (cursorVideos != null && cursorVideos.getCount() > 0) {
-                cursorVideos.close();
-                return true;
-            }
-        } catch (Exception e) {
-            // If the database query failed for any reason
-            ;
-        }
-        return false;
-    }
+//    public static final boolean setHasItems(final ContentResolver cr, final long setId) {
+//        final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
+//        final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
+//        final StringBuffer whereString = new StringBuffer(Images.ImageColumns.BUCKET_ID + "=" + setId);
+//        try {
+//            final Cursor cursorImages = cr.query(uriImages, BUCKET_PROJECTION_IMAGES, whereString.toString(), null, null);
+//            // 按照春哥说的，这里应该会有cursorImage 不关闭的情况，得用finally 关闭cursor,
+//            if (cursorImages != null && cursorImages.getCount() > 0) {
+//                cursorImages.close();
+//                return true;
+//            }
+//            final Cursor cursorVideos = cr.query(uriVideos, BUCKET_PROJECTION_VIDEOS, whereString.toString(), null, null);
+//            if (cursorVideos != null && cursorVideos.getCount() > 0) {
+//                cursorVideos.close();
+//                return true;
+//            }
+//        } catch (Exception e) {
+//            // If the database query failed for any reason
+//            ;
+//        }
+//        return false;
+//    }
 
+    /**
+     * 这个是从ablumCache中读入数据来
+     */
     public static final void loadMediaSets(final Context context, final MediaFeed feed, final DataSource source,
             final boolean includeImages, final boolean includeVideos, final boolean moveCameraToFront) {
         // We check to see if the Cache is ready.
@@ -244,13 +248,14 @@ public final class CacheService extends IntentService {
             final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
             try {
                 final int numAlbums = dis.readInt();
-                Log.i("ertewu", "CacheService loadMediaSets numAlbums:"+numAlbums);
+                LogUtils.log("CacheService loadMediaSets numAlbums:" + numAlbums);
                 for (int i = 0; i < numAlbums; ++i) {
                     final long setId = dis.readLong();
                     final String name = Utils.readUTF(dis);
-                    Log.i("ertewu", "CacheSercie r251 loop "+i+":"+setId+"|"+name);
+                    LogUtils.log("CacheSercie r251 loop " + i + ":" + setId + "|" + name);
                     final boolean hasImages = dis.readBoolean();
                     final boolean hasVideos = dis.readBoolean();
+                    // 从这里开始，其实是把从mAlbumCache读进来的cache给了MediaFeed,从而MediaFeed得到了sdcard这个MediaSet
                     MediaSet mediaSet = feed.getMediaSet(setId);
                     if (mediaSet == null) {
                         mediaSet = feed.addMediaSet(setId, source);
@@ -280,9 +285,11 @@ public final class CacheService extends IntentService {
     }
 
     /**
-     * 这个loadMediaSet与上边的loadMediaSets的明显区别是，我操只是 loadMediaSet是从一堆MediaSet中去找bucketId匹配的那个.,如果没有匹配还要生成一个新的..
+     * 这个loadMediaSet与上边的loadMediaSets的明显区别是，我操只是
+     * loadMediaSet是从一堆MediaSet中去找bucketId匹配的那个.,如果没有匹配还要生成一个新的..
      */
-    public static final void loadMediaSet(final Context context, final MediaFeed feed, final DataSource source, final long bucketId) {
+    public static final void loadMediaSet(final Context context, final MediaFeed feed, final DataSource source,
+            final long bucketId) {
         syncCache(context);
         final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
         if (albumData != null && albumData.length > 0) {
@@ -398,7 +405,7 @@ public final class CacheService extends IntentService {
         }
     }
 
-    public static final void populateVideoItemFromCursor(final MediaItem item, final ContentResolver cr, final Cursor cursor,
+    private static final void populateVideoItemFromCursor(final MediaItem item, final ContentResolver cr, final Cursor cursor,
             final String baseUri) {
         item.setMediaType(MediaItem.MEDIA_TYPE_VIDEO);
         populateMediaItemFromCursor(item, cr, cursor, baseUri);
@@ -464,13 +471,13 @@ public final class CacheService extends IntentService {
         return -1L;
     }
 
-    public static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId, final boolean isVideo,
-            final long timestamp) {
+    public static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId,
+            final boolean isVideo, final long timestamp) {
         final DiskCache thumbnailCache = (isVideo) ? LocalDataSource.sThumbnailCacheVideo : LocalDataSource.sThumbnailCache;
         return queryThumbnail(context, thumbId, origId, isVideo, thumbnailCache, timestamp);
     }
 
-    public static final ImageList getImageList(final Context context) {
+    private static final ImageList getImageList(final Context context) {
         if (sList != null)
             return sList;
         ImageList list = new ImageList();
@@ -511,8 +518,8 @@ public final class CacheService extends IntentService {
         return list;
     }
 
-    private static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId, final boolean isVideo,
-            final DiskCache thumbnailCache, final long timestamp) {
+    private static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId,
+            final boolean isVideo, final DiskCache thumbnailCache, final long timestamp) {
         if (!App.get(context).isPaused()) {
             final Thread thumbnailThread = THUMBNAIL_THREAD.getAndSet(null);
             if (thumbnailThread != null) {
@@ -702,36 +709,10 @@ public final class CacheService extends IntentService {
         super("CacheService");
     }
 
-    @Override
-    protected void onHandleIntent(final Intent intent) {
-        if (DEBUG)
-            Log.i(TAG, "Starting CacheService");
-        if (Environment.getExternalStorageState() == Environment.MEDIA_BAD_REMOVAL) {
-            sAlbumCache.deleteAll();
-            putLocaleForAlbumCache(Locale.getDefault());
-        }
-        Locale locale = getLocaleForAlbumCache();
-        //这里是检测地点语言等信息，如果不符合，把以前的cache都置为dirty
-        if (locale != null && locale.equals(Locale.getDefault())) {
-
-        } else {
-            // The locale has changed, we need to regenerate the strings.
-            markDirty();
-        }
-        if (intent.getBooleanExtra("checkthumbnails", false)) {
-            startNewThumbnailThread(this);
-        } else {
-            final Thread existingThread = THUMBNAIL_THREAD.getAndSet(null);
-            if (existingThread != null) {
-                existingThread.interrupt();
-            }
-        }
-    }
-
     private static final void putLocaleForAlbumCache(final Locale locale) {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
-        //这他妈是写哪去了？写哪去了？
+        // 这他妈是写哪去了？写哪去了？
         try {
             Utils.writeUTF(dos, locale.getCountry());
             Utils.writeUTF(dos, locale.getLanguage());
@@ -802,7 +783,7 @@ public final class CacheService extends IntentService {
         }
     }
 
-    public static final void startNewThumbnailThread(final Context context) {
+    private static final void startNewThumbnailThread(final Context context) {
         restartThread(THUMBNAIL_THREAD, "ThumbnailRefresh", new Runnable() {
             @Override
             public void run() {
@@ -965,7 +946,7 @@ public final class CacheService extends IntentService {
             Cursor[] cursors = new Cursor[2];
             cursors[0] = cursorImages;
             cursors[1] = cursorVideos;
-            //操？还可以这样玩的..mergeCursor..
+            // 操？还可以这样玩的..mergeCursor..
             final MergeCursor cursor = new MergeCursor(cursors);
             final ArrayList<Long> setIds = new ArrayList<Long>();
             final ArrayList<Long> maxAdded = new ArrayList<Long>();
@@ -1030,7 +1011,8 @@ public final class CacheService extends IntentService {
                     // We now check for any deleted sets.
                     final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
                     if (albumData != null && albumData.length > 0) {
-                        final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
+                        final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(
+                                albumData), 256));
                         try {
                             final int numAlbums = dis.readInt();
                             for (int i = 0; i < numAlbums; ++i) {
@@ -1039,7 +1021,8 @@ public final class CacheService extends IntentService {
                                 dis.readBoolean();
                                 dis.readBoolean();
                                 if (!setIds.contains(setId)) {
-                                    // This set was deleted, we need to recompute the cache.
+                                    // This set was deleted, we need to
+                                    // recompute the cache.
                                     markDirty();
                                     break;
                                 }
@@ -1238,5 +1221,11 @@ public final class CacheService extends IntentService {
         // This is the accelerated lookup table for the MediaSet based on set
         // id.
         return acceleratedTable.get(id);
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        // TODO Auto-generated method stub
+
     }
 }
