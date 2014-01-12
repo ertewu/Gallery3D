@@ -49,9 +49,6 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public void loadItemsForSet(MediaFeed feed, MediaSet parentSet, int rangeStart, int rangeEnd) {
-        if (parentSet.mNumItemsLoaded > 0 && mDone) {
-            return;
-        }
         // 这里删除了大把代码啊..没想到那些东西干啥的
         CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd);
         mDone = true;

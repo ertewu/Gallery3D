@@ -31,7 +31,6 @@ import android.view.Gravity;
 import android.widget.Toast;
 
 import com.cooliris.app.App;
-import com.cooliris.app.Res;
 import com.cooliris.media.MediaClustering.Cluster;
 
 public final class MediaFeed implements Runnable {
@@ -445,30 +444,7 @@ public final class MediaFeed implements Runnable {
                 if (dataSource != null) {
                     loadMediaSets();
                 }
-                mWaitingForMediaScanner = false;
-                while (ImageManager.isMediaScannerScanning(mContext.getContentResolver())) {
-                    // MediaScanner is still running, wait
-                    if (Thread.interrupted())
-                        return;
-                    mWaitingForMediaScanner = true;
-                    try {
-                        if (mContext == null)
-                            return;
-                        showToast(mContext.getResources().getString(Res.string.initializing), Toast.LENGTH_LONG);
-                        if (dataSource != null) {
-                            loadMediaSets();
-                        }
-                        Thread.sleep(10000);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-                if (mWaitingForMediaScanner) {
-                    //第一次开程序时，一直都在显示这个文字，就是loading_new这个
-                    showToast(mContext.getResources().getString(Res.string.loading_new), Toast.LENGTH_LONG);
-                    mWaitingForMediaScanner = false;
-                    loadMediaSets();
-                }
+                //以前这里关于sd卡扫描的部分，大部分都没有用，于是我决定删除它们..
                 mLoading = false;
             }
         });
@@ -968,28 +944,25 @@ public final class MediaFeed implements Runnable {
         final HashMap<String, ContentObserver> observers = mContentObservers;
         if (context instanceof Gallery) {
             final Gallery gallery = (Gallery) context;
+
+            //因为我已知只有一个uri，所以把下边的作精简得了
             final ContentResolver cr = context.getContentResolver();
-            if (uris != null) {
-                final int numUris = uris.length;
-                for (int i = 0; i < numUris; ++i) {
-                    final String uri = uris[i];
-                    //取到了一个URI所对应的ContentObserver,如果是空，其实是给对应的URI创建了一个ContentObserver
-                    final ContentObserver presentObserver = observers.get(uri);
-                    if (presentObserver == null) {
-                        final Handler handler = App.get(context).getHandler();
-                        final ContentObserver observer = new ContentObserver(handler) {
-                            @Override
-							public void onChange(boolean selfChange) {
-                                //所谓refresh，就是把这个URI加进mRequestedRefresh这个string二维数组里边去了,但是为什么非要用数组，还不甚了解
-                                if (!mWaitingForMediaScanner) {
-                                    MediaFeed.this.refresh(new String[] { uri });
-                                }
-                            }
-                        };
-                        cr.registerContentObserver(Uri.parse(uri), true, observer);
-                        observers.put(uri, observer);
+            final String uri = uris[0];
+            //取到了一个URI所对应的ContentObserver,如果是空，其实是给对应的URI创建了一个ContentObserver
+            final ContentObserver presentObserver = observers.get(uri);
+            if (presentObserver == null) {
+                final Handler handler = App.get(context).getHandler();
+                final ContentObserver observer = new ContentObserver(handler) {
+                    @Override
+                    public void onChange(boolean selfChange) {
+                        //所谓refresh，就是把这个URI加进mRequestedRefresh这个string二维数组里边去了,但是为什么非要用数组，还不甚了解
+                        if (!mWaitingForMediaScanner) {
+                            MediaFeed.this.refresh(new String[] { uri });
+                        }
                     }
-                }
+                };
+                cr.registerContentObserver(Uri.parse(uri), true, observer);
+                observers.put(uri, observer);
             }
         }
         refresh();
