@@ -50,7 +50,6 @@ import android.os.Process;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
-import android.provider.MediaStore.Video;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -87,19 +86,15 @@ public final class CacheService extends IntentService {
     private static final int DEFAULT_THUMBNAIL_HEIGHT = 96;
 
     public static final String DEFAULT_IMAGE_SORT_ORDER = Images.ImageColumns.DATE_TAKEN + " ASC";
-    public static final String DEFAULT_VIDEO_SORT_ORDER = Video.VideoColumns.DATE_TAKEN + " ASC";
     public static final String DEFAULT_BUCKET_SORT_ORDER = "upper(" + Images.ImageColumns.BUCKET_DISPLAY_NAME + ") ASC";
 
     // Must preserve order between these indices and the order of the terms in
-    // BUCKET_PROJECTION_IMAGES, BUCKET_PROJECTION_VIDEOS.
+    // BUCKET_PROJECTION_IMAGES
     // Not using SortedHashMap for efficieny reasons.
     public static final int BUCKET_ID_INDEX = 0;
     public static final int BUCKET_NAME_INDEX = 1;
     public static final String[] BUCKET_PROJECTION_IMAGES = new String[] { Images.ImageColumns.BUCKET_ID,
             Images.ImageColumns.BUCKET_DISPLAY_NAME };
-
-    public static final String[] BUCKET_PROJECTION_VIDEOS = new String[] { Video.VideoColumns.BUCKET_ID,
-            Video.VideoColumns.BUCKET_DISPLAY_NAME };
 
     // Must preserve order between these indices and the order of the terms in
     // THUMBNAIL_PROJECTION.
@@ -114,8 +109,7 @@ public final class CacheService extends IntentService {
             "MAX(" + Images.ImageColumns.DATE_ADDED + "), COUNT(*)" };
 
     // Must preserve order between these indices and the order of the terms in
-    // INITIAL_PROJECTION_IMAGES and
-    // INITIAL_PROJECTION_VIDEOS.
+    // INITIAL_PROJECTION_IMAGES
     public static final int MEDIA_ID_INDEX = 0;
     public static final int MEDIA_CAPTION_INDEX = 1;
     public static final int MEDIA_MIME_TYPE_INDEX = 2;
@@ -131,11 +125,6 @@ public final class CacheService extends IntentService {
             Images.ImageColumns.MIME_TYPE, Images.ImageColumns.LATITUDE, Images.ImageColumns.LONGITUDE,
             Images.ImageColumns.DATE_TAKEN, Images.ImageColumns.DATE_ADDED, Images.ImageColumns.DATE_MODIFIED,
             Images.ImageColumns.DATA, Images.ImageColumns.ORIENTATION, Images.ImageColumns.BUCKET_ID };
-
-    public static final String[] PROJECTION_VIDEOS = new String[] { Video.VideoColumns._ID, Video.VideoColumns.TITLE,
-            Video.VideoColumns.MIME_TYPE, Video.VideoColumns.LATITUDE, Video.VideoColumns.LONGITUDE,
-            Video.VideoColumns.DATE_TAKEN, Video.VideoColumns.DATE_ADDED, Video.VideoColumns.DATE_MODIFIED,
-            Video.VideoColumns.DATA, Video.VideoColumns.DURATION, Video.VideoColumns.BUCKET_ID };
 
     public static final String BASE_CONTENT_STRING_IMAGES = (Images.Media.EXTERNAL_CONTENT_URI).toString() + "/";
     private static final AtomicReference<Thread> THUMBNAIL_THREAD = new AtomicReference<Thread>();
@@ -886,21 +875,18 @@ public final class CacheService extends IntentService {
 
     /**
      * 这个函数用于检查是否有新的相册 ,最终为止是把一堆setId返回去了<br>
-     * 而setId是 uriImages与uriVideo中的 Images.ImageColumns.BUCKET_ID字段
+     * 而setId是 uriImages中的 Images.ImageColumns.BUCKET_ID字段
      * 说白了，是作bucketId 是否dirty的动作？ 也就是是否初始化一个新的bucketId?
      */
     public static final long[] computeDirtySets(final Context context) {
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
-        final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
         final ContentResolver cr = context.getContentResolver();
         final String where = Images.ImageColumns.BUCKET_ID + "!=0) GROUP BY (" + Images.ImageColumns.BUCKET_ID + " ";
         ArrayList<Long> retVal = new ArrayList<Long>();
         try {
             final Cursor cursorImages = cr.query(uriImages, SENSE_PROJECTION, where, null, null);
-            final Cursor cursorVideos = cr.query(uriVideos, SENSE_PROJECTION, where, null, null);
-            Cursor[] cursors = new Cursor[2];
+            Cursor[] cursors = new Cursor[1];
             cursors[0] = cursorImages;
-            cursors[1] = cursorVideos;
             // 操？还可以这样玩的..mergeCursor..
             final MergeCursor cursor = new MergeCursor(cursors);
             final ArrayList<Long> setIds = new ArrayList<Long>();
@@ -1020,7 +1006,6 @@ public final class CacheService extends IntentService {
         if (DEBUG)
             Log.i(TAG, "Building items.");
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
-        final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
         final ContentResolver cr = context.getContentResolver();
 
         String whereClause = null;
@@ -1040,10 +1025,8 @@ public final class CacheService extends IntentService {
         }
         try {
             final Cursor cursorImages = cr.query(uriImages, PROJECTION_IMAGES, whereClause, null, DEFAULT_IMAGE_SORT_ORDER);
-            final Cursor cursorVideos = cr.query(uriVideos, PROJECTION_VIDEOS, whereClause, null, DEFAULT_VIDEO_SORT_ORDER);
-            final Cursor[] cursors = new Cursor[2];
+            final Cursor[] cursors = new Cursor[1];
             cursors[0] = cursorImages;
-            cursors[1] = cursorVideos;
             final SortCursor sortCursor = new SortCursor(cursors, Images.ImageColumns.DATE_TAKEN, SortCursor.TYPE_NUMERIC, true);
             if (Thread.interrupted()) {
                 return;
