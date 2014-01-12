@@ -129,7 +129,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 valueToUse = -event.values[0];
                 break;
             case Surface.ROTATION_270:
-                valueToUse =  event.values[1];
+                valueToUse = event.values[1];
                 break;
             default:
                 valueToUse = 0.0f;
@@ -164,7 +164,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         long timestamp = SystemClock.elapsedRealtime();
         long delta = timestamp - mPrevTouchTime;
         mPrevTouchTime = timestamp;
-        float timeElapsed = (float) delta;
+        float timeElapsed = delta;
         timeElapsed = timeElapsed * 0.001f; // division by 1000 for seconds
         switch (mActionCode) {
         case MotionEvent.ACTION_UP:
@@ -258,7 +258,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
             }
         } else {
             mCurrentFocusIsPressed = false;
-            int numRows = ((GridLayoutInterface) layer.getLayoutInterface()).mNumRows;
+            int numRows = layer.getLayoutInterface().mNumRows;
             if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER && mCurrentFocusSlot != Shared.INVALID) {
                 if (layer.getHud().getMode() != HudLayer.MODE_SELECT) {
                     boolean centerCamera = layer.tapGesture(mCurrentFocusSlot, false);
@@ -369,8 +369,8 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 pool.delete(worldPosDelta);
             }
             if (layer.getZoomValue() == 1.0f) {
-                if (camera
-                        .computeConstraints(false, (layer.getState() != GridLayer.STATE_FULL_SCREEN), firstPosition, lastPosition)) {
+                if (camera.computeConstraints(false, (layer.getState() != GridLayer.STATE_FULL_SCREEN), firstPosition,
+                        lastPosition)) {
                     deltaX = 0.0f;
                     // vibrate
                     if (!mTouchFeedbackDelivered) {
@@ -532,11 +532,13 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         mCurrentSelectedSlot = slotId;
     }
 
+    @Override
     public boolean onDown(MotionEvent e) {
         // TODO Auto-generated method stub
         return true;
     }
 
+    @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
         if (mCurrentSelectedSlot == Shared.INVALID) {
             mCamera.moveYTo(0);
@@ -577,6 +579,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         }
     }
 
+    @Override
     public void onLongPress(MotionEvent e) {
         if (mZoomGesture)
             return;
@@ -599,16 +602,19 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         }
     }
 
+    @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         // TODO Auto-generated method stub
         return false;
     }
 
+    @Override
     public void onShowPress(MotionEvent e) {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public boolean onSingleTapUp(MotionEvent e) {
         GridLayer layer = mLayer;
         int posX = (int) e.getX();
@@ -632,8 +638,6 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                     layer.changeFocusToPreviousSlot(1.0f);
                 } else if (posX > mCamera.mWidth - 32 && posYInBounds) {
                     layer.changeFocusToNextSlot(1.0f);
-                } else if (item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO) {
-                    Utils.playVideo(mContext, item);
                 } else {
                     // We stop any slideshow.
                     HudLayer hud = layer.getHud();
@@ -683,27 +687,26 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 if (layer.getPickIntent()) {
                     // we need to return this item
                     App.get(mContext).getHandler().post(new Runnable() {
+                        @Override
                         public void run() {
                             CropImage.launchCropperOrFinish(mContext, item);
                         }
                     });
                     return;
                 }
-                if (item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO) {
-                    Utils.playVideo(mContext, item);
-                } else {
-                    mCurrentSelectedSlot = slotId;
-                    layer.endSlideshow();
-                    layer.setState(GridLayer.STATE_FULL_SCREEN);
-                    mCamera.mConvergenceSpeed = 2.0f;
-                    mCamera.mFriction = 0.0f;
-                    layer.getHud().fullscreenSelectionChanged(item, mCurrentSelectedSlot + 1, layer.getCompleteRange().end + 1);
-                }
+
+                mCurrentSelectedSlot = slotId;
+                layer.endSlideshow();
+                layer.setState(GridLayer.STATE_FULL_SCREEN);
+                mCamera.mConvergenceSpeed = 2.0f;
+                mCamera.mFriction = 0.0f;
+                layer.getHud().fullscreenSelectionChanged(item, mCurrentSelectedSlot + 1, layer.getCompleteRange().end + 1);
             }
         }
         constrainCamera(true);
     }
 
+    @Override
     public boolean onDoubleTap(MotionEvent e) {
         final GridLayer layer = mLayer;
         if (layer.getState() == GridLayer.STATE_FULL_SCREEN && !mCamera.isZAnimating()) {
@@ -729,10 +732,12 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         return true;
     }
 
+    @Override
     public boolean onDoubleTapEvent(MotionEvent e) {
         return false;
     }
 
+    @Override
     public boolean onSingleTapConfirmed(MotionEvent e) {
         return false;
     }
@@ -750,6 +755,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         // mView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
     }
 
+    @Override
     public boolean onScale(ScaleGestureDetector detector) {
         final GridLayer layer = mLayer;
         float scale = detector.getScaleFactor();
@@ -789,6 +795,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         return true;
     }
 
+    @Override
     public boolean onScaleBegin(ScaleGestureDetector detector) {
         mZoomGesture = true;
         mScale = 1.0f;
@@ -811,6 +818,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         return true;
     }
 
+    @Override
     public void onScaleEnd(ScaleGestureDetector detector, boolean cancel) {
         if (!cancel) {
             final GridLayer layer = mLayer;
@@ -835,8 +843,8 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                     if (hud.getMode() == HudLayer.MODE_SELECT) {
                         layer.addSlotToSelectedItems(mCurrentScaleSlot, true, true);
                     } else {
-                        boolean centerCamera = (mCurrentSelectedSlot == Shared.INVALID) ? layer
-                                .tapGesture(mCurrentScaleSlot, false) : true;
+                        boolean centerCamera = (mCurrentSelectedSlot == Shared.INVALID) ? layer.tapGesture(mCurrentScaleSlot,
+                                false) : true;
                         if (centerCamera) {
                             // We check if this item is a video or not.
                             selectSlot(mCurrentScaleSlot);

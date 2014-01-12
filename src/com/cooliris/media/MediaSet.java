@@ -29,7 +29,6 @@ public class MediaSet {
     public boolean mFlagForDelete;
 
     public boolean mHasImages;
-    public boolean mHasVideos;
 
     // The type of the media set. A smart media set is an automatically
     // generated media set. For example, the most recently

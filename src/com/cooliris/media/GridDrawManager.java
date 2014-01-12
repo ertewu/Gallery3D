@@ -65,6 +65,7 @@ public final class GridDrawManager {
     private boolean mHoldPosition;
 
     private static final Comparator<DisplayItem> sDisplayItemComparator = new Comparator<DisplayItem>() {
+        @Override
         public int compare(DisplayItem a, DisplayItem b) {
             if (a == null || b == null) {
                 return 0;
@@ -352,7 +353,7 @@ public final class GridDrawManager {
                         mSelectedMixRatio.setValue(0f);
                         mSelectedMixRatio.animateValue(1f, 0.75f, view.getFrameTime());
                     }
-                    Texture hiRes = (zoomValue != 1.0f && i == 0 && item.getMediaType() != MediaItem.MEDIA_TYPE_VIDEO) ? displayItem
+                    Texture hiRes = (zoomValue != 1.0f && i == 0) ? displayItem
                             .getHiResImage(view.getContext())
                             : null;
                     if (App.PIXEL_DENSITY > 1.0f) {
@@ -463,12 +464,6 @@ public final class GridDrawManager {
                             }
                         }
                         view.setAlpha(alpha);
-                        if (item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO) {
-                            // The play graphic overlay.
-                            GridDrawables.sVideoGrid.bindArrays(gl);
-                            drawDisplayItem(view, gl, displayItem, drawables.mTextureVideo, PASS_VIDEO_LABEL, null, 0);
-                            GridDrawables.sVideoGrid.unbindArrays(gl);
-                        }
                     }
                 }
             }
@@ -689,9 +684,6 @@ public final class GridDrawManager {
             for (int i = firstBufferedVisibleSlot; i <= lastBufferedVisibleSlot; ++i) {
                 DisplayItem displayItem = displayItems[(i - firstBufferedVisibleSlot) * GridLayer.MAX_ITEMS_PER_SLOT];
                 if (displayItem != null && displayItem.mAlive) {
-                    if (displayItem.mItemRef.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO) {
-                        drawDisplayItem(view, gl, displayItem, videoTexture, PASS_VIDEO_LABEL, null, 0);
-                    }
                 }
             }
             GridDrawables.sVideoGrid.unbindArrays(gl);

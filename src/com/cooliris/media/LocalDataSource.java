@@ -31,7 +31,6 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
-import android.provider.MediaStore.Video;
 import android.util.Log;
 
 import com.cooliris.app.LogUtils;
@@ -62,20 +61,18 @@ public class LocalDataSource implements DataSource {
 
     private final String mUri;
     private final String mBucketId;
-    private boolean mDone;;
+    private boolean mDone;
     private final boolean mSingleUri;
     private final boolean mAllItems;
     private final boolean mFlattenAllItems;
     private final DiskCache mDiskCache;
     private boolean mIncludeImages;
-    private boolean mIncludeVideos;
     private Context mContext;
 
     public LocalDataSource(final Context context, final String uri, final boolean flattenAllItems) {
         this.mUri = uri;
         mContext = context;
         mIncludeImages = true;
-        mIncludeVideos = false;
         LogUtils.log("localDataSource r78:"+uri+"|"+Uri.parse(uri).getQueryParameter("bucketId"));
         //12-17 19:47:14.762: I/ertewu(7767): localDataSource r78:content://media/external/images/media|null
         String bucketId = Uri.parse(uri).getQueryParameter("bucketId");
@@ -99,22 +96,11 @@ public class LocalDataSource implements DataSource {
         LogUtils.log("r98 mSingleUri:"+mSingleUri);
         mDone = false;
 
-
-        LogUtils.log("r102 Uri:"
-                + MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString()
-                + "\n" + MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString());
-
         //在nexus4以及我的手机上,是符合MediaStore.Images.Media.EXTERNAL_CONTENT_URI这个要求的，则是sThumbnailCache
         mDiskCache = mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
-                || mUri.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString())
                 || mUri.startsWith("file://") ? sThumbnailCache
                 : null;
         LogUtils.log("r103:"+mDiskCache);
-    }
-
-    public void setMimeFilter(boolean includeImages, boolean includeVideos) {
-        mIncludeImages = includeImages;
-        mIncludeVideos = includeVideos;
     }
 
     @Override
@@ -146,7 +132,7 @@ public class LocalDataSource implements DataSource {
             MediaItem item = new MediaItem();
             item.mId = 0;
             item.mFilePath = "";
-            item.setMediaType((isImage(mUri)) ? MediaItem.MEDIA_TYPE_IMAGE : MediaItem.MEDIA_TYPE_VIDEO);
+            item.setMediaType(MediaItem.MEDIA_TYPE_IMAGE);
             if (mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
                 || mUri.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString())) {
                 MediaItem newItem = createMediaItemFromUri(mContext, Uri.parse(mUri), item.getMediaType());
@@ -202,7 +188,7 @@ public class LocalDataSource implements DataSource {
                 if (dateTaken != -1L) {
                     item.mDateTakenInMs = dateTaken;
                 }
-                CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd, mIncludeImages, mIncludeVideos);
+                CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd, mIncludeImages);
                 ArrayList<MediaItem> items = parentSet.getItems();
                 int numItems = items.size();
                 if (numItems == 1 && parentSet.mNumItemsLoaded > 1) {
@@ -240,13 +226,9 @@ public class LocalDataSource implements DataSource {
                 ;
             }
         } else {
-            CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd, mIncludeImages, mIncludeVideos);
+            CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd, mIncludeImages);
         }
         mDone = true;
-    }
-
-    private static boolean isImage(String uriString) {
-        return !uriString.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString());
     }
 
     @Override
@@ -275,7 +257,8 @@ public class LocalDataSource implements DataSource {
                 set.generateTitle(true);
                 set.mPicasaAlbumId = Shared.INVALID;
             } else {
-                CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos, true);
+                //第一次实际上是走到这了，因为mFattenALlItems 为false mBucketId 为null
+                CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, true);
             }
         } else {
             CacheService.loadMediaSet(mContext, feed, this, Long.parseLong(mBucketId));
@@ -289,7 +272,7 @@ public class LocalDataSource implements DataSource {
             if (!CacheService.isPresentInCache(setId)) {
                 CacheService.markDirty();
             }
-            CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, mIncludeVideos, false);
+            CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, false);
 
             // not re-ordering media sets in the case of displaying a single image
             if (!mSingleUri) {
@@ -312,11 +295,8 @@ public class LocalDataSource implements DataSource {
                     // TODO bulk delete
                     // remove the entire bucket
                     final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
-                    final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
                     final String whereImages = Images.ImageColumns.BUCKET_ID + "=" + Long.toString(set.mId);
-                    final String whereVideos = Video.VideoColumns.BUCKET_ID + "=" + Long.toString(set.mId);
                     cr.delete(uriImages, whereImages, null);
-                    cr.delete(uriVideos, whereVideos, null);
                     //CacheService.markDirty();
                 }
                 if (set != null && items != null) {
@@ -402,25 +382,25 @@ public class LocalDataSource implements DataSource {
         ContentResolver cr = context.getContentResolver();
         String whereClause = Images.ImageColumns._ID + "=" + Long.toString(id);
         try {
-            final Uri uri = (mediaType == MediaItem.MEDIA_TYPE_IMAGE)
-                    ? Images.Media.EXTERNAL_CONTENT_URI
-                    : Video.Media.EXTERNAL_CONTENT_URI;
-            final String[] projection = (mediaType == MediaItem.MEDIA_TYPE_IMAGE)
-                    ? CacheService.PROJECTION_IMAGES
-                    : CacheService.PROJECTION_VIDEOS;
-            Cursor cursor = cr.query(uri, projection, whereClause, null, null);
-            if (cursor != null) {
-                if (cursor.moveToFirst()) {
-                    item = new MediaItem();
-                    CacheService.populateMediaItemFromCursor(item, cr, cursor, uri.toString() + "/");
-                    item.mId = id;
+
+            if(mediaType==MediaItem.MEDIA_TYPE_IMAGE){
+                final Uri uri =Images.Media.EXTERNAL_CONTENT_URI;
+                final String[] projection =CacheService.PROJECTION_IMAGES;
+                Cursor cursor = cr.query(uri, projection, whereClause, null, null);
+                if (cursor != null) {
+                    if (cursor.moveToFirst()) {
+                        item = new MediaItem();
+                        CacheService.populateMediaItemFromCursor(item, cr, cursor, uri.toString() + "/");
+                        item.mId = id;
+                    }
+                    cursor.close();
+                    cursor = null;
                 }
-                cursor.close();
-                cursor = null;
+            }else{
+                throw new IllegalAccessException("LocalDataSource createMediaItem from Uri:mediaType Error!");
             }
         } catch (Exception e) {
             // If the database operation failed for any reason.
-            ;
         }
         return item;
     }
@@ -454,7 +434,7 @@ public class LocalDataSource implements DataSource {
      */
     @Override
     public String[] getDatabaseUris() {
-        return new String[] {Images.Media.EXTERNAL_CONTENT_URI.toString(), Video.Media.EXTERNAL_CONTENT_URI.toString()};
+        return new String[] {Images.Media.EXTERNAL_CONTENT_URI.toString()};
     }
 
     /**这里是真正沿着数据刷新内容的地方?用uri,但我想知道他妈的databaseUris 在哪里用到了？*/

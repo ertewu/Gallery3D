@@ -25,9 +25,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Process;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.os.Process;
 
 import com.cooliris.cache.CacheService;
 
@@ -94,6 +94,7 @@ public final class MediaItemTexture extends Texture {
         return mCached;
     }
 
+    @Override
     protected Bitmap load(RenderView view) {
         final Config config = mConfig;
         final MediaItem item = mItem;
@@ -147,6 +148,7 @@ public final class MediaItemTexture extends Texture {
                 } else {
                     Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
                     new Thread() {
+                        @Override
                         public void run() {
                             try {
                                 Thread.sleep(5000);
@@ -198,8 +200,7 @@ public final class MediaItemTexture extends Texture {
                 }
             } else {
                 long dateToUse = (item.mDateAddedInSec > item.mDateModifiedInSec) ? item.mDateAddedInSec : item.mDateModifiedInSec;
-                data = CacheService.queryThumbnail(mContext, Utils.Crc64Long(item.mFilePath), item.mId,
-                        item.getMediaType() == MediaItem.MEDIA_TYPE_VIDEO, dateToUse * 1000);
+                data = CacheService.queryThumbnail(mContext, Utils.Crc64Long(item.mFilePath), item.mId, dateToUse * 1000);
             }
             if (data != null) {
                 try {

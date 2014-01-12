@@ -23,7 +23,6 @@ import java.util.Date;
  */
 public final class MediaItem {
     public static final int MEDIA_TYPE_IMAGE = 0;
-    public static final int MEDIA_TYPE_VIDEO = 1;
     // Approximately the year 1975 in milliseconds and seconds. Serves as a min
     // cutoff for bad times.
     public static final long MIN_VALID_DATE_IN_MS = 157680000000L;
@@ -118,13 +117,10 @@ public final class MediaItem {
         return (mParentMediaSet != null && mParentMediaSet.isPicassaAlbum());
     }
 
-    private static final String VIDEO = "video/";
-
     public int getMediaType() {
         if (mMediaType == -1) {
             // Default to image if mMimetype is null or not video.
-            mMediaType = (mMimeType != null && mMimeType.startsWith(VIDEO)) ? MediaItem.MEDIA_TYPE_VIDEO
-                    : MediaItem.MEDIA_TYPE_IMAGE;
+            mMediaType = MediaItem.MEDIA_TYPE_IMAGE;
         }
         return mMediaType;
     }

@@ -437,17 +437,15 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     public void setDataSource(DataSource dataSource) {
-        MediaFeed feed = mMediaFeed;
+        MediaFeed olderFeed = mMediaFeed;
+        //显然是把老的MediaFeed听到了， 然后又初始化了新的MediaFeed
         mMediaFeed = new MediaFeed(mContext, dataSource, this);
-        if (feed != null) {
-            // Restore the slot state in the original feed before shutting it down.
-            //这不是在给自己restore么
-            mMediaFeed.copySlotStateFrom(feed);
-            feed.shutdown();
+        if (olderFeed != null) {
+            mMediaFeed.copySlotStateFrom(olderFeed);
+            olderFeed.shutdown();
             mDisplayList.clear();
             getBackgroundLayer().clear();
         }
-
         mMediaFeed.start();
     }
 
