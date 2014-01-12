@@ -61,11 +61,6 @@ public final class MediaItemTexture extends Texture {
         MediaSet parentMediaSet = item.mParentMediaSet;
         if (config != null && parentMediaSet != null && parentMediaSet.mDataSource != null) {
             cache = parentMediaSet.mDataSource.getThumbnailCache();
-            if (cache == LocalDataSource.sThumbnailCache) {
-                if (item.mMimeType != null && item.mMimeType.contains("video")) {
-                    cache = LocalDataSource.sThumbnailCacheVideo;
-                }
-            }
         }
         if (cache == null) {
             return false;
@@ -128,9 +123,6 @@ public final class MediaItemTexture extends Texture {
                         if (parentMediaSet != null && parentMediaSet.mDataSource != null) {
                             cache = parentMediaSet.mDataSource.getThumbnailCache();
                             if (cache == LocalDataSource.sThumbnailCache) {
-                                if (item.mMimeType != null && item.mMimeType.contains("video")) {
-                                    cache = LocalDataSource.sThumbnailCacheVideo;
-                                }
                                 final long crc64 = Utils.Crc64Long(item.mFilePath);
                                 if (!cache.isDataAvailable(crc64, item.mDateModifiedInSec * 1000)) {
                                     UriTexture.invalidateCache(crc64, UriTexture.MAX_RESOLUTION);

@@ -40,7 +40,6 @@ public class LocalDataSource implements DataSource {
     private static final String TAG = "LocalDataSource";
     public static final String URI_ALL_MEDIA = MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString();
     public static final DiskCache sThumbnailCache = new DiskCache("local-image-thumbs");
-    public static final DiskCache sThumbnailCacheVideo = new DiskCache("local-video-thumbs");
 
     public static final String CAMERA_STRING = "Camera";
     public static final String DOWNLOAD_STRING = "download";
@@ -133,8 +132,7 @@ public class LocalDataSource implements DataSource {
             item.mId = 0;
             item.mFilePath = "";
             item.setMediaType(MediaItem.MEDIA_TYPE_IMAGE);
-            if (mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())
-                || mUri.startsWith(MediaStore.Video.Media.EXTERNAL_CONTENT_URI.toString())) {
+            if (mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())) {
                 MediaItem newItem = createMediaItemFromUri(mContext, Uri.parse(mUri), item.getMediaType());
                 if (newItem != null) {
                     item = newItem;

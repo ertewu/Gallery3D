@@ -80,7 +80,6 @@ public final class Gallery extends Activity {
 			mRenderView.onPause();
 
 		LocalDataSource.sThumbnailCache.flush();
-		LocalDataSource.sThumbnailCacheVideo.flush();
 
 		mApp.onPause();
 	}
