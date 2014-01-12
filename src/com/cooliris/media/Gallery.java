@@ -16,10 +16,14 @@
 
 package com.cooliris.media;
 
+import java.io.File;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -35,12 +39,12 @@ public final class Gallery extends Activity {
 	private RenderView mRenderView = null;
 	private GridLayer mGridLayer;
 
+	public static final String CAMERA_DIR = Environment.getExternalStorageDirectory().toString() + "/DCIM";
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		mApp = new App(Gallery.this);
-
 		mRenderView = new RenderView(this);
 
 
@@ -164,9 +168,12 @@ public final class Gallery extends Activity {
 
 	//这个是目前为止需要看的最重要的函数了
 	private void initializeDataSource() {
+	    File file=new File(CAMERA_DIR);
+	    Uri cameraUri=Uri.fromFile(file);
+
 		// Creating the DataSource objects.
 		final LocalDataSource localDataSource = new LocalDataSource(
-				Gallery.this, LocalDataSource.URI_ALL_MEDIA, false);
+				Gallery.this, LocalDataSource.URI_ALL_MEDIA);
 		final ConcatenatedDataSource combinedDataSource = new ConcatenatedDataSource(
 				localDataSource);
 
