@@ -22,7 +22,6 @@ import java.util.Date;
  * MediaItem的构造函数非常简单，另我感觉可怕的是，这个类的字段都是public的，我他妈的怎么跟踪..
  */
 public final class MediaItem {
-    public static final int MEDIA_TYPE_IMAGE = 0;
     // Approximately the year 1975 in milliseconds and seconds. Serves as a min
     // cutoff for bad times.
     public static final long MIN_VALID_DATE_IN_MS = 157680000000L;
@@ -47,7 +46,6 @@ public final class MediaItem {
     public String mWeblink;
     public String mMimeType;
     private String mDisplayMimeType;
-    private int mMediaType = -1;
     public String mRole;
     public String mDescription;
 
@@ -117,17 +115,6 @@ public final class MediaItem {
         return (mParentMediaSet != null && mParentMediaSet.isPicassaAlbum());
     }
 
-    public int getMediaType() {
-        if (mMediaType == -1) {
-            // Default to image if mMimetype is null or not video.
-            mMediaType = MediaItem.MEDIA_TYPE_IMAGE;
-        }
-        return mMediaType;
-    }
-
-    public void setMediaType(int mediaType) {
-        mMediaType = mediaType;
-    }
 
     public String getDisplayMimeType() {
         if (mDisplayMimeType == null && mMimeType != null) {

@@ -240,7 +240,6 @@ public final class HudLayer extends Layer {
         boolean albumMode = false;
         boolean singleItem = false;
         boolean isPicasa = false;
-        int mediaType = MediaItem.MEDIA_TYPE_IMAGE;
         if (numBuckets > 1) {
             albumMode = true;
         }
@@ -256,16 +255,8 @@ public final class HudLayer extends Layer {
             } else {
                 ArrayList<MediaItem> items = bucket.mediaItems;
                 int numItems = items.size();
-                mediaType = items.get(0).getMediaType();
                 if (numItems == 1) {
                     singleItem = true;
-                } else {
-                    for (int i = 1; i < numItems; ++i) {
-                        if (items.get(0).getMediaType() != mediaType) {
-                            albumMode = true;
-                            break;
-                        }
-                    }
                 }
             }
         }
@@ -404,17 +395,14 @@ public final class HudLayer extends Layer {
         Option[] options = optionAll;
         if (!albumMode) {
             if (!singleItem) {
-                if (mediaType == MediaItem.MEDIA_TYPE_IMAGE)
                     options = concat(options, optionImageMultiple);
             } else {
                 MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
                 if (item.mLatitude != 0.0f && item.mLongitude != 0.0f) {
                     options = concat(options, optionSingle);
                 }
-                if (mediaType == MediaItem.MEDIA_TYPE_IMAGE) {
                     options = concat(options, optionImageSingle);
                     options = concat(options, optionImageMultiple);
-                }
             }
         }
 
@@ -715,7 +703,6 @@ public final class HudLayer extends Layer {
         ArrayList<Uri> uris = new ArrayList<Uri>();
         String mimeType = null;
         if (!selection.isEmpty()) {
-            int mediaType = Shared.INVALID;
             int numBuckets = selection.size();
             for (int j = 0; j < numBuckets; ++j) {
                 MediaBucket bucket = selection.get(j);
@@ -733,7 +720,6 @@ public final class HudLayer extends Layer {
                     MediaItem item = items.get(i);
                     if (mimeType == null) {
                         mimeType = item.mMimeType;
-                        mediaType = item.getMediaType();
                         MediaSet parentMediaSet = item.mParentMediaSet;
                         if (parentMediaSet != null && parentMediaSet.mPicasaAlbumId != Shared.INVALID) {
                             // This will go away once http uri's are supported
@@ -742,11 +728,6 @@ public final class HudLayer extends Layer {
                             // text
                             mimeType = "text/plain";
                         }
-                    }
-                    // Ensure that the media type remains the same
-                    if (mediaType != item.getMediaType()) {
-                        if (!mimeType.contains("text"))
-                            mimeType = "*/*";
                     }
                     // add this uri
                     if (item.mContentUri != null) {

@@ -79,7 +79,6 @@ public class MediaSet {
 
     private ArrayList<MediaItem> mItems;
     private LongSparseArray<MediaItem> mItemsLookup;
-    private LongSparseArray<MediaItem> mItemsLookupVideo;
     public int mNumItemsLoaded = 0;
     // mNumExpectedItems is preset to how many items are expected to be in the
     // set as it is used to visually
@@ -97,8 +96,6 @@ public class MediaSet {
         mItems = new ArrayList<MediaItem>(16);
         mItemsLookup = new LongSparseArray<MediaItem>();
         mItemsLookup.clear();
-        mItemsLookupVideo = new LongSparseArray<MediaItem>();
-        mItemsLookupVideo.clear();
         mDataSource = dataSource;
         // TODO(Venkat): Can we move away from this dummy item setup? 意思是说这个item是个假的？
         MediaItem item = new MediaItem();
@@ -150,7 +147,6 @@ public class MediaSet {
         mNumExpectedItems = 16;
         refresh();
         mItemsLookup.clear();
-        mItemsLookupVideo.clear();
     }
 
     /**
@@ -184,8 +180,7 @@ public class MediaSet {
         if (itemToAdd == null) {
             return;
         }
-        final LongSparseArray<MediaItem> lookup = (itemToAdd.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup
-                : mItemsLookupVideo;
+        final LongSparseArray<MediaItem> lookup = mItemsLookup;
         MediaItem lookupItem = lookup.get(itemToAdd.mId);
         if (lookupItem != null && !lookupItem.mFilePath.equals(itemToAdd.mFilePath)) {
             lookupItem = null;
@@ -269,8 +264,7 @@ public class MediaSet {
                 --mNumExpectedItems;
                 --mNumItemsLoaded;
                 --mCurrentLocation;
-                final LongSparseArray<MediaItem> lookup = (itemToRemove.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup
-                        : mItemsLookupVideo;
+                final LongSparseArray<MediaItem> lookup =  mItemsLookup;
                 lookup.remove(itemToRemove.mId);
                 return true;
             }
@@ -303,8 +297,7 @@ public class MediaSet {
      * @return true if this MediaSet contains the argument MediaItem.
      */
     public boolean lookupContainsItem(final MediaItem item) {
-        final LongSparseArray<MediaItem> lookupTable = (item.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) ? mItemsLookup
-                : mItemsLookupVideo;
+        final LongSparseArray<MediaItem> lookupTable =  mItemsLookup;
         MediaItem lookUp = lookupTable.get(item.mId);
         if (lookUp != null && lookUp.mFilePath.equals(item.mFilePath)) {
             return true;

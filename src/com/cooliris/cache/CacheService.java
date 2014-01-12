@@ -306,7 +306,6 @@ public final class CacheService extends IntentService {
                     item.mId = dis.readLong();
                     item.mCaption = Utils.readUTF(dis);
                     item.mMimeType = Utils.readUTF(dis);
-                    item.setMediaType(dis.readInt());
                     item.mLatitude = dis.readDouble();
                     item.mLongitude = dis.readDouble();
                     item.mDateTakenInMs = dis.readLong();
@@ -325,12 +324,9 @@ public final class CacheService extends IntentService {
                     } else {
                         reuseItem = null;
                     }
-                    int itemMediaType = item.getMediaType();
-                    if ((itemMediaType == MediaItem.MEDIA_TYPE_IMAGE)) {
                         String baseUri = BASE_CONTENT_STRING_IMAGES;
                         item.mContentUri = baseUri + item.mId;
                         feed.addItemToMediaSet(item, set);
-                    }
                 }
                 set.checkForDeletedItems();
                 dis.close();
@@ -383,13 +379,9 @@ public final class CacheService extends IntentService {
         item.mFilePath = cursor.getString(CacheService.MEDIA_DATA_INDEX);
         if (baseUri != null)
             item.mContentUri = baseUri + item.mId;
-        final int itemMediaType = item.getMediaType();
         final int orientationDurationValue = cursor.getInt(CacheService.MEDIA_ORIENTATION_OR_DURATION_INDEX);
-        if (itemMediaType == MediaItem.MEDIA_TYPE_IMAGE) {
+
             item.mRotation = orientationDurationValue;
-        } else {
-            item.mDurationInSec = orientationDurationValue;
-        }
     }
 
     // Returns -1 if we failed to examine EXIF information or EXIF parsing
@@ -1128,7 +1120,6 @@ public final class CacheService extends IntentService {
                 dos.writeLong(item.mId);
                 Utils.writeUTF(dos, item.mCaption);
                 Utils.writeUTF(dos, item.mMimeType);
-                dos.writeInt(item.getMediaType());
                 dos.writeDouble(item.mLatitude);
                 dos.writeDouble(item.mLongitude);
                 dos.writeLong(item.mDateTakenInMs);

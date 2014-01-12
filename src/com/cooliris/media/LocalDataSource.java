@@ -127,9 +127,8 @@ public class LocalDataSource implements DataSource {
             MediaItem item = new MediaItem();
             item.mId = 0;
             item.mFilePath = "";
-            item.setMediaType(MediaItem.MEDIA_TYPE_IMAGE);
             if (mUri.startsWith(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString())) {
-                MediaItem newItem = createMediaItemFromUri(mContext, Uri.parse(mUri), item.getMediaType());
+                MediaItem newItem = createMediaItemFromUri(mContext, Uri.parse(mUri));
                 if (newItem != null) {
                     item = newItem;
                     String fileUri = new File(item.mFilePath).toURI().toString();
@@ -370,14 +369,13 @@ public class LocalDataSource implements DataSource {
         }
     }
 
-    public static MediaItem createMediaItemFromUri(Context context, Uri target, int mediaType) {
+    public static MediaItem createMediaItemFromUri(Context context, Uri target) {
         MediaItem item = null;
         long id = ContentUris.parseId(target);
         ContentResolver cr = context.getContentResolver();
         String whereClause = Images.ImageColumns._ID + "=" + Long.toString(id);
         try {
 
-            if(mediaType==MediaItem.MEDIA_TYPE_IMAGE){
                 final Uri uri =Images.Media.EXTERNAL_CONTENT_URI;
                 final String[] projection =CacheService.PROJECTION_IMAGES;
                 Cursor cursor = cr.query(uri, projection, whereClause, null, null);
@@ -390,9 +388,6 @@ public class LocalDataSource implements DataSource {
                     cursor.close();
                     cursor = null;
                 }
-            }else{
-                throw new IllegalAccessException("LocalDataSource createMediaItem from Uri:mediaType Error!");
-            }
         } catch (Exception e) {
             // If the database operation failed for any reason.
         }

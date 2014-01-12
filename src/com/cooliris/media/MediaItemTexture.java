@@ -26,7 +26,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Process;
-import android.provider.MediaStore;
 import android.util.Log;
 
 import com.cooliris.cache.CacheService;
@@ -114,50 +113,29 @@ public final class MediaItemTexture extends Texture {
         if (config == null) {
             Bitmap retVal = null;
             try {
-                if (mItem.getMediaType() == MediaItem.MEDIA_TYPE_IMAGE) {
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
-                    try {
-                        // We first dirty the cache if the timestamp has changed
-                        DiskCache cache = null;
-                        MediaSet parentMediaSet = item.mParentMediaSet;
-                        if (parentMediaSet != null && parentMediaSet.mDataSource != null) {
-                            cache = parentMediaSet.mDataSource.getThumbnailCache();
-                            if (cache == LocalDataSource.sThumbnailCache) {
-                                final long crc64 = Utils.Crc64Long(item.mFilePath);
-                                if (!cache.isDataAvailable(crc64, item.mDateModifiedInSec * 1000)) {
-                                    UriTexture.invalidateCache(crc64, UriTexture.MAX_RESOLUTION);
-                                }
+
+                Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
+                try {
+                    // We first dirty the cache if the timestamp has changed
+                    DiskCache cache = null;
+                    MediaSet parentMediaSet = item.mParentMediaSet;
+                    if (parentMediaSet != null && parentMediaSet.mDataSource != null) {
+                        cache = parentMediaSet.mDataSource.getThumbnailCache();
+                        if (cache == LocalDataSource.sThumbnailCache) {
+                            final long crc64 = Utils.Crc64Long(item.mFilePath);
+                            if (!cache.isDataAvailable(crc64, item.mDateModifiedInSec * 1000)) {
+                                UriTexture.invalidateCache(crc64, UriTexture.MAX_RESOLUTION);
                             }
                         }
-                        retVal = UriTexture.createFromUri(mContext, mItem.mContentUri, UriTexture.MAX_RESOLUTION,
-                                UriTexture.MAX_RESOLUTION, Utils.Crc64Long(item.mFilePath), null);
-                    } catch (IOException e) {
-                        ;
-                    } catch (URISyntaxException e) {
-                        ;
                     }
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                } else {
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            try {
-                                Thread.sleep(5000);
-                            } catch (InterruptedException e) {
-                                ;
-                            }
-                            try {
-                                MediaStore.Video.Thumbnails.cancelThumbnailRequest(mContext.getContentResolver(), mItem.mId);
-                            } catch (Exception e) {
-                                ;
-                            }
-                        }
-                    }.start();
-                    retVal = MediaStore.Video.Thumbnails.getThumbnail(mContext.getContentResolver(), mItem.mId,
-                            MediaStore.Video.Thumbnails.MINI_KIND, null);
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                    retVal = UriTexture.createFromUri(mContext, mItem.mContentUri, UriTexture.MAX_RESOLUTION,
+                            UriTexture.MAX_RESOLUTION, Utils.Crc64Long(item.mFilePath), null);
+                } catch (IOException e) {
+                    ;
+                } catch (URISyntaxException e) {
+                    ;
                 }
+                Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
             } catch (OutOfMemoryError e) {
                 Log.i(TAG, "Bitmap creation fail, outofmemory");
                 view.handleLowMemory();
@@ -191,7 +169,8 @@ public final class MediaItemTexture extends Texture {
                     }
                 }
             } else {
-                long dateToUse = (item.mDateAddedInSec > item.mDateModifiedInSec) ? item.mDateAddedInSec : item.mDateModifiedInSec;
+                long dateToUse = (item.mDateAddedInSec > item.mDateModifiedInSec) ? item.mDateAddedInSec
+                        : item.mDateModifiedInSec;
                 data = CacheService.queryThumbnail(mContext, Utils.Crc64Long(item.mFilePath), item.mId, dateToUse * 1000);
             }
             if (data != null) {

@@ -264,7 +264,7 @@ public class CropImage extends MonitoredActivity {
             int rotation = 0;
 
             if (targetScheme.equals("content")) {
-                mItem = LocalDataSource.createMediaItemFromUri(this, target, MediaItem.MEDIA_TYPE_IMAGE);
+                mItem = LocalDataSource.createMediaItemFromUri(this, target);
             }
             try {
                 if (mItem != null) {
