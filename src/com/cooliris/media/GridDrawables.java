@@ -44,7 +44,6 @@ public final class GridDrawables {
     private static final int TEXTURE_CHECKMARK_ON = Res.drawable.grid_check_on;
     private static final int TEXTURE_CHECKMARK_OFF = Res.drawable.grid_check_off;
     private static final int TEXTURE_CAMERA_SMALL = Res.drawable.icon_camera_small_unscaled;
-    private static final int TEXTURE_PICASA_SMALL = Res.drawable.icon_picasa_small_unscaled;
     public static final int[] TEXTURE_SPINNER = new int[8];
     private static final int TEXTURE_TRANSPARENT = Res.drawable.transparent;
     private static final int TEXTURE_PLACEHOLDER = Res.drawable.grid_placeholder;
@@ -58,7 +57,6 @@ public final class GridDrawables {
     public Texture mTextureCheckmarkOn;
     public Texture mTextureCheckmarkOff;
     public Texture mTextureCameraSmall;
-    public Texture mTexturePicasaSmall;
     public Texture[] mTextureSpinner = new Texture[8];
     public Texture mTextureTransparent;
     public Texture mTexturePlaceholder;
@@ -167,7 +165,6 @@ public final class GridDrawables {
         mTextureCheckmarkOn = view.getResource(TEXTURE_CHECKMARK_ON, false);
         mTextureCheckmarkOff = view.getResource(TEXTURE_CHECKMARK_OFF, false);
         mTextureCameraSmall = view.getResource(TEXTURE_CAMERA_SMALL, false);
-        mTexturePicasaSmall = view.getResource(TEXTURE_PICASA_SMALL, false);
         mTextureTransparent = view.getResource(TEXTURE_TRANSPARENT, false);
         mTexturePlaceholder = view.getResource(TEXTURE_PLACEHOLDER, false);
         view.loadTexture(mTextureFrame);

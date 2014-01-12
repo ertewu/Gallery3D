@@ -172,7 +172,5 @@ public final class Gallery extends Activity {
 
 			//是以android.intent.action.Main 走进来的，从以前的代码来看，不同的action还对应不同的source源呢，这一下可没少删除代码..
 	    mGridLayer.setDataSource(combinedDataSource);
-
-		// We record the set of enabled accounts for picasa.
 	}
 }

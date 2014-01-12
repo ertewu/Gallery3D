@@ -239,7 +239,6 @@ public final class HudLayer extends Layer {
         int numBuckets = buckets.size();
         boolean albumMode = false;
         boolean singleItem = false;
-        boolean isPicasa = false;
         if (numBuckets > 1) {
             albumMode = true;
         }
@@ -323,26 +322,10 @@ public final class HudLayer extends Layer {
                     }
                 }), };
 
-        if (isPicasa) {
-            optionImageMultiple = new Option[] {};
-        }
+
         Option[] optionImageSingle;
-        if (isPicasa) {
-            optionImageSingle = new Option[] { new PopupMenu.Option(mContext.getResources().getString(Res.string.set_as_wallpaper),
-                    mContext.getResources().getDrawable(Res.drawable.ic_menu_set_as), new Runnable() {
-                        @Override
-                        public void run() {
-                            ArrayList<MediaBucket> buckets = mGridLayer.getSelectedBuckets();
-                            MediaItem item = MediaBucketList.getFirstItemSelection(buckets);
-                            if (item == null || item.mContentUri == null) {
-                                return;
-                            }
-                            mGridLayer.deselectAll();
-                        }
-                    }) };
-        } else {
             optionImageSingle = new Option[] {
-                    new PopupMenu.Option((isPicasa) ? mContext.getResources().getString(Res.string.set_as_wallpaper) : mContext
+                    new PopupMenu.Option(mContext
                             .getResources().getString(Res.string.set_as), mContext.getResources().getDrawable(
                             Res.drawable.ic_menu_set_as), new Runnable() {
                         @Override
@@ -376,7 +359,6 @@ public final class HudLayer extends Layer {
                             ((Activity) mContext).startActivityForResult(intent, CropImage.CROP_MSG_INTERNAL);
                         }
                     }) };
-        }
         Option[] options = optionAll;
         if (!albumMode) {
             if (!singleItem) {
@@ -811,7 +793,6 @@ public final class HudLayer extends Layer {
     }
 
     public void computeBottomMenu() {
-        // we need to the same for picasa albums
         ArrayList<MediaBucket> selection = mGridLayer.getSelectedBuckets();
         Menu[] menus = mSelectionMenuBottom.getMenus();
         if (menus == mSingleViewIntentBottomMenu)

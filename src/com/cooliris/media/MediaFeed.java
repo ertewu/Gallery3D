@@ -772,12 +772,6 @@ public final class MediaFeed implements Runnable {
             }
         }
         mExpandedMediaSetIndex = mediaSetIndex;
-        if (mediaSetIndex < mMediaSets.size() && mediaSetIndex >= 0) {
-            // Notify Picasa that the user entered the album.
-            // MediaSet set = mMediaSets.get(mediaSetIndex);
-            // PicasaService.requestSync(mContext,
-            // PicasaService.TYPE_ALBUM_PHOTOS, set.mPicasaAlbumId);
-        }
         updateListener(true);
         mMediaFeedNeedsToRun = true;
     }
