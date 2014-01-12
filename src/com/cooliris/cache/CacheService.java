@@ -205,7 +205,7 @@ public final class CacheService extends IntentService {
      * 这个是从ablumCache中读入数据来
      */
     public static final void loadMediaSets(final Context context, final MediaFeed feed, final DataSource source,
-            final boolean includeImages, final boolean moveCameraToFront) {
+            final boolean moveCameraToFront) {
         // We check to see if the Cache is ready.
         syncCache(context);
         final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
@@ -229,7 +229,7 @@ public final class CacheService extends IntentService {
                     if (moveCameraToFront && mediaSet.mId == LocalDataSource.CAMERA_BUCKET_ID) {
                         feed.moveSetToFront(mediaSet);
                     }
-                    if ((includeImages && hasImages)) {
+                    if (hasImages){
                         mediaSet.mName = name;
                         mediaSet.mHasImages = hasImages;
                         mediaSet.mPicasaAlbumId = Shared.INVALID;
@@ -289,7 +289,7 @@ public final class CacheService extends IntentService {
     }
 
     public static final void loadMediaItemsIntoMediaFeed(final Context context, final MediaFeed feed, final MediaSet set,
-            final int rangeStart, final int rangeEnd, final boolean includeImages) {
+            final int rangeStart, final int rangeEnd) {
         syncCache(context);
         byte[] albumData = sAlbumCache.get(set.mId, 0);
         if (albumData != null && set.mNumItemsLoaded < set.getNumExpectedItems()) {
@@ -326,7 +326,7 @@ public final class CacheService extends IntentService {
                         reuseItem = null;
                     }
                     int itemMediaType = item.getMediaType();
-                    if ((itemMediaType == MediaItem.MEDIA_TYPE_IMAGE && includeImages)) {
+                    if ((itemMediaType == MediaItem.MEDIA_TYPE_IMAGE)) {
                         String baseUri = BASE_CONTENT_STRING_IMAGES;
                         item.mContentUri = baseUri + item.mId;
                         feed.addItemToMediaSet(item, set);

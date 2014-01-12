@@ -65,15 +65,11 @@ public class LocalDataSource implements DataSource {
     private final boolean mAllItems;
     private final boolean mFlattenAllItems;
     private final DiskCache mDiskCache;
-    private boolean mIncludeImages;
     private Context mContext;
 
     public LocalDataSource(final Context context, final String uri, final boolean flattenAllItems) {
         this.mUri = uri;
         mContext = context;
-        mIncludeImages = true;
-        LogUtils.log("localDataSource r78:"+uri+"|"+Uri.parse(uri).getQueryParameter("bucketId"));
-        //12-17 19:47:14.762: I/ertewu(7767): localDataSource r78:content://media/external/images/media|null
         String bucketId = Uri.parse(uri).getQueryParameter("bucketId");
         if (bucketId != null && bucketId.length() > 0) {
             mBucketId = bucketId;
@@ -186,7 +182,7 @@ public class LocalDataSource implements DataSource {
                 if (dateTaken != -1L) {
                     item.mDateTakenInMs = dateTaken;
                 }
-                CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd, mIncludeImages);
+                CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd);
                 ArrayList<MediaItem> items = parentSet.getItems();
                 int numItems = items.size();
                 if (numItems == 1 && parentSet.mNumItemsLoaded > 1) {
@@ -224,7 +220,7 @@ public class LocalDataSource implements DataSource {
                 ;
             }
         } else {
-            CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd, mIncludeImages);
+            CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd);
         }
         mDone = true;
     }
@@ -256,7 +252,7 @@ public class LocalDataSource implements DataSource {
                 set.mPicasaAlbumId = Shared.INVALID;
             } else {
                 //第一次实际上是走到这了，因为mFattenALlItems 为false mBucketId 为null
-                CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, true);
+                CacheService.loadMediaSets(mContext, feed, this, true);
             }
         } else {
             CacheService.loadMediaSet(mContext, feed, this, Long.parseLong(mBucketId));
@@ -270,7 +266,7 @@ public class LocalDataSource implements DataSource {
             if (!CacheService.isPresentInCache(setId)) {
                 CacheService.markDirty();
             }
-            CacheService.loadMediaSets(mContext, feed, this, mIncludeImages, false);
+            CacheService.loadMediaSets(mContext, feed, this,false);
 
             // not re-ordering media sets in the case of displaying a single image
             if (!mSingleUri) {
