@@ -186,8 +186,8 @@ public final class GridDrawables {
     }
 
     /**
-     *iron_man实例里,log显示gridview那里一直都是false，也就是说不是setState那个调用了..
-     *也就是：drawBlendedComponents 这个的调用
+     * iron_man实例里,log显示gridview那里一直都是false，也就是说不是setState那个调用了..
+     * 也就是：drawBlendedComponents 这个的调用
      */
     public int getIconForSet(MediaSet set, boolean scaled) {
         // We return the scaled version for HUD rendering and the unscaled
@@ -196,9 +196,7 @@ public final class GridDrawables {
             if (set == null) {
                 return Res.drawable.icon_folder_small;
             }
-            if (set.mPicasaAlbumId != Shared.INVALID) {
-                return Res.drawable.icon_picasa_small;
-            } else if (set.mId == LocalDataSource.CAMERA_BUCKET_ID) {
+            if (set.mId == LocalDataSource.CAMERA_BUCKET_ID) {
                 return Res.drawable.icon_camera_small;
             } else {
                 return Res.drawable.icon_folder_small;
@@ -207,12 +205,10 @@ public final class GridDrawables {
             if (set == null) {
                 return Res.drawable.icon_folder_small_unscaled;
             }
-            if (set.mPicasaAlbumId != Shared.INVALID) {
-                return Res.drawable.icon_picasa_small_unscaled;
-            } else if (set.mId == LocalDataSource.CAMERA_BUCKET_ID) {
+            if (set.mId == LocalDataSource.CAMERA_BUCKET_ID) {
                 return Res.drawable.icon_camera_small_unscaled;
             } else {
-                //iron_man的返回肯定是这个..
+                // iron_man的返回肯定是这个..
                 return Res.drawable.icon_folder_small_unscaled;
             }
         }

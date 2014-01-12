@@ -249,7 +249,6 @@ public final class HudLayer extends Layer {
             if (mediaSet == null) {
                 return;
             }
-            isPicasa = mediaSet.mPicasaAlbumId != Shared.INVALID;
             if (bucket.mediaItems == null || bucket.mediaItems.size() == 0) {
                 albumMode = true;
             } else {
@@ -339,13 +338,6 @@ public final class HudLayer extends Layer {
                                 return;
                             }
                             mGridLayer.deselectAll();
-                            if (item.mParentMediaSet.mPicasaAlbumId != Shared.INVALID) {
-                                final Intent intent = new Intent("android.intent.action.ATTACH_DATA");
-                                intent.setClass(mContext, Photographs.class);
-                                intent.setData(Uri.parse(item.mContentUri));
-                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                ((Activity) mContext).startActivityForResult(intent, 0);
-                            }
                         }
                     }) };
         } else {
@@ -361,18 +353,11 @@ public final class HudLayer extends Layer {
                                 return;
                             }
                             mGridLayer.deselectAll();
-                            if (item.mParentMediaSet.mPicasaAlbumId != Shared.INVALID) {
-                                final Intent intent = new Intent("android.intent.action.ATTACH_DATA");
-                                intent.setClass(mContext, Photographs.class);
-                                intent.setData(Uri.parse(item.mContentUri));
-                                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                ((Activity) mContext).startActivityForResult(intent, 0);
-                            } else {
+
                                 Intent intent = Util.createSetAsIntent(Uri.parse(item.mContentUri), item.mMimeType);
                                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                 ((Activity) mContext).startActivity(Intent.createChooser(intent, mContext
                                         .getText(Res.string.set_image)));
-                            }
                         }
                     }),
                     new PopupMenu.Option(mContext.getResources().getString(Res.string.crop), mContext.getResources().getDrawable(
@@ -721,13 +706,6 @@ public final class HudLayer extends Layer {
                     if (mimeType == null) {
                         mimeType = item.mMimeType;
                         MediaSet parentMediaSet = item.mParentMediaSet;
-                        if (parentMediaSet != null && parentMediaSet.mPicasaAlbumId != Shared.INVALID) {
-                            // This will go away once http uri's are supported
-                            // for all media types.
-                            // This ensures that just the link is shared as a
-                            // text
-                            mimeType = "text/plain";
-                        }
                     }
                     // add this uri
                     if (item.mContentUri != null) {
@@ -843,10 +821,6 @@ public final class HudLayer extends Layer {
             MediaBucket bucket = selection.get(i);
             if (bucket == null || bucket.mediaSet == null)
                 continue;
-            if (bucket.mediaSet.mPicasaAlbumId != Shared.INVALID) {
-                mSelectionMenuBottom.setMenus(mSingleViewIntentBottomMenu);
-                break;
-            }
         }
     }
 

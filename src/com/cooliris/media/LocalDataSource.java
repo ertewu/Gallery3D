@@ -236,7 +236,6 @@ public class LocalDataSource implements DataSource {
             set.mId = id;
             set.setNumExpectedItems(2);
             set.generateTitle(true);
-            set.mPicasaAlbumId = Shared.INVALID;
             if (this.getThumbnailCache() != sThumbnailCache) {
                 loadOtherSets = false;
             }
@@ -248,7 +247,6 @@ public class LocalDataSource implements DataSource {
                 set.mId = getBucketId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString() + "/" + set.mName);
                 set.setNumExpectedItems(1);
                 set.generateTitle(true);
-                set.mPicasaAlbumId = Shared.INVALID;
             } else {
                 //第一次实际上是走到这了，因为mFattenALlItems 为false mBucketId 为null
                 CacheService.loadMediaSets(mContext, feed, this, true);
