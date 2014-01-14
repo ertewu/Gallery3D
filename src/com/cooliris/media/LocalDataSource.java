@@ -20,24 +20,11 @@ public class LocalDataSource implements DataSource {
     public static final String URI_ALL_MEDIA = MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString();
     public static final DiskCache sThumbnailCache = new DiskCache("local-image-thumbs");
 
-    private final String mUri;
-    private final String mBucketId;
-    private boolean mDone;
-    private final boolean mSingleUri;
-    private final boolean mAllItems;
     private final DiskCache mDiskCache;
     private Context mContext;
 
-    public LocalDataSource(final Context context, final String uri) {
-        this.mUri = uri;
+    public LocalDataSource(final Context context) {
         mContext = context;
-
-        // 前边本来有一堆判断的，但是最终结果就是这样，为了代码简单我能看懂，我就删除了那些
-        mBucketId = null;
-        mAllItems = true;
-        mSingleUri = false;
-        mDone = false;
-
         // 在nexus4以及我的手机上,是符合MediaStore.Images.Media.EXTERNAL_CONTENT_URI这个要求的，则是sThumbnailCache
         mDiskCache = sThumbnailCache;
     }
@@ -51,7 +38,6 @@ public class LocalDataSource implements DataSource {
     public void loadItemsForSet(MediaFeed feed, MediaSet parentSet, int rangeStart, int rangeEnd) {
         // 这里删除了大把代码啊..没想到那些东西干啥的
         CacheService.loadMediaItemsIntoMediaFeed(mContext, feed, parentSet, rangeStart, rangeEnd);
-        mDone = true;
     }
 
     @Override

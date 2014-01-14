@@ -173,7 +173,7 @@ public final class Gallery extends Activity {
 
 		// Creating the DataSource objects.
 		final LocalDataSource localDataSource = new LocalDataSource(
-				Gallery.this, LocalDataSource.URI_ALL_MEDIA);
+                Gallery.this);
 		final ConcatenatedDataSource combinedDataSource = new ConcatenatedDataSource(
 				localDataSource);
 
