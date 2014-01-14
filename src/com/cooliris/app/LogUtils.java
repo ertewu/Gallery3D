@@ -8,11 +8,39 @@ public class LogUtils {
         Log.i("ertewu", "" + str);
     }
 
+    public static void footPrint(){
+        String msgToPrint="";
+        String className = Thread.currentThread().getStackTrace()[4].getClassName();
+        int index = className.lastIndexOf(".");
+        if (index > -1) {
+            className = className.substring(index + 1);
+        }
+
+       String invokeclass = Thread.currentThread().getStackTrace()[5].getClassName();
+       index = invokeclass.lastIndexOf(".");
+        if (index > -1) {
+            invokeclass = invokeclass.substring(index + 1);
+        }
+
+        className=className+"--"+invokeclass;
+
+        String methodName= Thread.currentThread().getStackTrace()[4].getMethodName()+"--"+Thread.currentThread().getStackTrace()[5].getMethodName();
+        int rowIndex = Thread.currentThread().getStackTrace()[4].getLineNumber();
+
+        msgToPrint =msgToPrint+"Thread id:" + Thread.currentThread().getId() + "|Thread name:"
+                + Thread.currentThread().getName() + "|ClassName:" + className + "|MethodName:" + methodName
+                + "|RowIndex:" + rowIndex + "\n";
+
+        msgToPrint = msgToPrint + "\n";
+//        log(msgToPrint);
+        Log.i("ertewu2", msgToPrint);
+    }
+
     /**
      * 这个footPrint是从项目中拿出来的，应该是最好用的
      */
-    public static void footPrint(String appendMsg) {
-        String msgToPrint = "--------------footprint start------------------\n";
+    public static void printMethodInfo(String appendMsg) {
+        String msgToPrint = "--------------printMethodInfo start------------------\n";
         String className = Thread.currentThread().getStackTrace()[3].getClassName();
         int index = className.lastIndexOf(".");
         if (index > -1) {
@@ -28,7 +56,7 @@ public class LogUtils {
 
         msgToPrint = msgToPrint + "\n";
         msgToPrint = msgToPrint + appendMsg + "\n";
-        msgToPrint = msgToPrint + "--------------footprint end----------------";
+        msgToPrint = msgToPrint + "--------------printMethodInfo end----------------";
         Log.i("ertewu", msgToPrint);
     }
 

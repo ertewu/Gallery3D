@@ -142,10 +142,12 @@ public final class CacheService extends IntentService {
     private static final Object sCacheLock = new Object();
 
     public static final String getCachePath(final String subFolderName) {
+        cacheLog();
         return Environment.getExternalStorageDirectory() + "/Android/data/com.cooliris.media/cache/" + subFolderName;
     }
 
     public static final void startCache(final Context context, final boolean checkthumbnails) {
+        cacheLog();
         final Locale locale = getLocaleForAlbumCache();
         final Locale defaultLocale = Locale.getDefault();
         if (locale == null || !locale.equals(defaultLocale)) {
@@ -158,6 +160,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final boolean isCacheReady(final boolean onlyMediaSets) {
+        cacheLog();
         if (onlyMediaSets) {
             return (sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0) != null && sAlbumCache.get(ALBUM_CACHE_DIRTY_INDEX, 0) == null);
         } else {
@@ -167,10 +170,12 @@ public final class CacheService extends IntentService {
     }
 
     public static final boolean isPresentInCache(final long setId) {
+        cacheLog();
         return sAlbumCache.get(setId, 0) != null;
     }
 
     public static final void markDirty() {
+        cacheLog();
         sList = null;
         synchronized (sCacheLock) {
             sAlbumCache.put(ALBUM_CACHE_DIRTY_INDEX, sDummyData, 0);
@@ -178,6 +183,7 @@ public final class CacheService extends IntentService {
     }
 
     public static final void markDirty(final long id) {
+        cacheLog();
         if (id == Shared.INVALID) {
             return;
         }
@@ -206,6 +212,7 @@ public final class CacheService extends IntentService {
      */
     public static final void loadMediaSets(final Context context, final MediaFeed feed, final DataSource source,
             final boolean moveCameraToFront) {
+        cacheLog();
         // We check to see if the Cache is ready.
         syncCache(context);
         final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
@@ -229,7 +236,7 @@ public final class CacheService extends IntentService {
                     if (moveCameraToFront && mediaSet.mId == LocalDataSource.CAMERA_BUCKET_ID) {
                         feed.moveSetToFront(mediaSet);
                     }
-                    if (hasImages){
+                    if (hasImages) {
                         mediaSet.mName = name;
                         mediaSet.mHasImages = hasImages;
                         mediaSet.generateTitle(true);
@@ -252,6 +259,7 @@ public final class CacheService extends IntentService {
      */
     public static final void loadMediaSet(final Context context, final MediaFeed feed, final DataSource source,
             final long bucketId) {
+        cacheLog();
         syncCache(context);
         final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
         if (albumData != null && albumData.length > 0) {
@@ -288,6 +296,7 @@ public final class CacheService extends IntentService {
 
     public static final void loadMediaItemsIntoMediaFeed(final Context context, final MediaFeed feed, final MediaSet set,
             final int rangeStart, final int rangeEnd) {
+        cacheLog();
         syncCache(context);
         byte[] albumData = sAlbumCache.get(set.mId, 0);
         if (albumData != null && set.mNumItemsLoaded < set.getNumExpectedItems()) {
@@ -322,9 +331,9 @@ public final class CacheService extends IntentService {
                     } else {
                         reuseItem = null;
                     }
-                        String baseUri = BASE_CONTENT_STRING_IMAGES;
-                        item.mContentUri = baseUri + item.mId;
-                        feed.addItemToMediaSet(item, set);
+                    String baseUri = BASE_CONTENT_STRING_IMAGES;
+                    item.mContentUri = baseUri + item.mId;
+                    feed.addItemToMediaSet(item, set);
                 }
                 set.checkForDeletedItems();
                 dis.close();
@@ -342,6 +351,7 @@ public final class CacheService extends IntentService {
     }
 
     private static void syncCache(Context context) {
+        cacheLog();
         if (!isCacheReady(true)) {
             // In this case, we should try to show a toast
             if (context instanceof Gallery) {
@@ -360,9 +370,9 @@ public final class CacheService extends IntentService {
         }
     }
 
-
     public static final void populateMediaItemFromCursor(final MediaItem item, final ContentResolver cr, final Cursor cursor,
             final String baseUri) {
+        cacheLog();
         item.mId = cursor.getLong(CacheService.MEDIA_ID_INDEX);
         item.mCaption = cursor.getString(CacheService.MEDIA_CAPTION_INDEX);
         item.mMimeType = cursor.getString(CacheService.MEDIA_MIME_TYPE_INDEX);
@@ -379,12 +389,13 @@ public final class CacheService extends IntentService {
             item.mContentUri = baseUri + item.mId;
         final int orientationDurationValue = cursor.getInt(CacheService.MEDIA_ORIENTATION_OR_DURATION_INDEX);
 
-            item.mRotation = orientationDurationValue;
+        item.mRotation = orientationDurationValue;
     }
 
     // Returns -1 if we failed to examine EXIF information or EXIF parsing
     // failed.
     public static final long fetchDateTaken(final MediaItem item) {
+        cacheLog();
         if (!item.isDateTakenValid() && !item.mTriedRetrievingExifDateTaken
                 && (item.mFilePath.endsWith(".jpg") || item.mFilePath.endsWith(".jpeg"))) {
             try {
@@ -417,13 +428,14 @@ public final class CacheService extends IntentService {
         return -1L;
     }
 
-    public static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId,
-           final long timestamp) {
-        final DiskCache thumbnailCache =LocalDataSource.sThumbnailCache;
-        return queryThumbnail(context, thumbId, origId,thumbnailCache, timestamp);
+    public static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId, final long timestamp) {
+        cacheLog();
+        final DiskCache thumbnailCache = LocalDataSource.sThumbnailCache;
+        return queryThumbnail(context, thumbId, origId, thumbnailCache, timestamp);
     }
 
     private static final ImageList getImageList(final Context context) {
+        cacheLog();
         if (sList != null)
             return sList;
         ImageList list = new ImageList();
@@ -466,6 +478,7 @@ public final class CacheService extends IntentService {
 
     private static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId,
             final DiskCache thumbnailCache, final long timestamp) {
+        cacheLog();
         if (!App.get(context).isPaused()) {
             final Thread thumbnailThread = THUMBNAIL_THREAD.getAndSet(null);
             if (thumbnailThread != null) {
@@ -484,6 +497,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final void buildThumbnails(final Context context) {
+        cacheLog();
         if (DEBUG)
             Log.i(TAG, "Preparing DiskCache for all thumbnails.");
         ImageList list = getImageList(context);
@@ -517,11 +531,13 @@ public final class CacheService extends IntentService {
     }
 
     private static void addToThumbnailerSkipList(long thumbnailId) {
+        cacheLog();
         sSkipThumbnailIds.put(thumbnailId, sDummyData, 0);
         sSkipThumbnailIds.flush();
     }
 
     private static boolean isInThumbnailerSkipList(long thumbnailId) {
+        cacheLog();
         if (sSkipThumbnailIds != null && sSkipThumbnailIds.isDataAvailable(thumbnailId, 0)) {
             byte[] data = sSkipThumbnailIds.get(thumbnailId, 0);
             if (data != null && data.length > 0) {
@@ -532,7 +548,8 @@ public final class CacheService extends IntentService {
     }
 
     private static final byte[] buildThumbnailForId(final Context context, final DiskCache thumbnailCache, final long thumbId,
-            final long origId,  final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
+            final long origId, final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
+        cacheLog();
         if (origId == Shared.INVALID) {
             return null;
         }
@@ -549,14 +566,14 @@ public final class CacheService extends IntentService {
                     }
                     try {
 
-                            MediaStore.Images.Thumbnails.cancelThumbnailRequest(context.getContentResolver(), origId);
+                        MediaStore.Images.Thumbnails.cancelThumbnailRequest(context.getContentResolver(), origId);
                     } catch (Exception e) {
                         ;
                     }
                 }
             }.start();
-                bitmap = MediaStore.Images.Thumbnails.getThumbnail(context.getContentResolver(), origId,
-                        MediaStore.Images.Thumbnails.MINI_KIND, null);
+            bitmap = MediaStore.Images.Thumbnails.getThumbnail(context.getContentResolver(), origId,
+                    MediaStore.Images.Thumbnails.MINI_KIND, null);
             if (bitmap == null) {
                 return null;
             }
@@ -570,6 +587,7 @@ public final class CacheService extends IntentService {
 
     public static final byte[] writeBitmapToCache(final DiskCache thumbnailCache, final long thumbId, final long origId,
             final Bitmap bitmap, final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
+        cacheLog();
         final int width = bitmap.getWidth();
         final int height = bitmap.getHeight();
         // Detect faces to find the focal point, otherwise fall back to the
@@ -648,6 +666,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final void putLocaleForAlbumCache(final Locale locale) {
+        cacheLog();
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(bos);
         // 这他妈是写哪去了？写哪去了？
@@ -671,6 +690,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final Locale getLocaleForAlbumCache() {
+        cacheLog();
         final byte[] data = sAlbumCache.get(ALBUM_CACHE_LOCALE_INDEX, 0);
         if (data != null && data.length > 0) {
             ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -700,6 +720,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final void restartThread(final AtomicReference<Thread> threadRef, final String name, final Runnable action) {
+        cacheLog();
         // Create a new thread.
         final Thread newThread = new Thread() {
             @Override
@@ -722,6 +743,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final void startNewThumbnailThread(final Context context) {
+        cacheLog();
         restartThread(THUMBNAIL_THREAD, "ThumbnailRefresh", new Runnable() {
             @Override
             public void run() {
@@ -739,6 +761,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final byte[] concat(final byte[] A, final byte[] B) {
+        cacheLog();
         final byte[] C = new byte[A.length + B.length];
         System.arraycopy(A, 0, C, 0, A.length);
         System.arraycopy(B, 0, C, A.length, B.length);
@@ -746,6 +769,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final long[] toLongArray(final byte[] data) {
+        cacheLog();
         final ByteBuffer bBuffer = ByteBuffer.wrap(data);
         final LongBuffer lBuffer = bBuffer.asLongBuffer();
         final int numLongs = lBuffer.capacity();
@@ -757,6 +781,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final byte[] longToByteArray(final long l) {
+        cacheLog();
         final byte[] bArray = new byte[8];
         final ByteBuffer bBuffer = ByteBuffer.wrap(bArray);
         final LongBuffer lBuffer = bBuffer.asLongBuffer();
@@ -765,6 +790,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final byte[] longArrayToByteArray(final long[] l) {
+        cacheLog();
         final byte[] bArray = new byte[8 * l.length];
         final ByteBuffer bBuffer = ByteBuffer.wrap(bArray);
         final LongBuffer lBuffer = bBuffer.asLongBuffer();
@@ -776,6 +802,7 @@ public final class CacheService extends IntentService {
     }
 
     private final static void refresh(final Context context) {
+        cacheLog();
         // First we build the album cache.
         // This is the meta-data about the albums / buckets on the SD card.
         if (DEBUG)
@@ -840,6 +867,7 @@ public final class CacheService extends IntentService {
     }
 
     private final static void refreshDirtySets(final Context context) {
+        cacheLog();
         synchronized (sCacheLock) {
             final byte[] existingData = sAlbumCache.get(ALBUM_CACHE_DIRTY_BUCKET_INDEX, 0);
             if (existingData != null && existingData.length > 0) {
@@ -865,10 +893,12 @@ public final class CacheService extends IntentService {
 
     /**
      * 这个函数用于检查是否有新的相册 ,最终为止是把一堆setId返回去了<br>
-     * 而setId是 uriImages中的 Images.ImageColumns.BUCKET_ID字段
-     * 说白了，是作bucketId 是否dirty的动作？ 也就是是否初始化一个新的bucketId?
+     * 而setId是 uriImages中的 Images.ImageColumns.BUCKET_ID字段 说白了，是作bucketId
+     * 是否dirty的动作？ 也就是是否初始化一个新的bucketId?
      */
     public static final long[] computeDirtySets(final Context context) {
+        LogUtils.printStackTrace("computeDirtySets");
+        cacheLog();
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
         final ContentResolver cr = context.getContentResolver();
         final String where = Images.ImageColumns.BUCKET_ID + "!=0) GROUP BY (" + Images.ImageColumns.BUCKET_ID + " ";
@@ -980,6 +1010,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final void addNoDupe(ArrayList<Long> array, long value) {
+        cacheLog();
         int size = array.size();
         for (int i = 0; i < size; ++i) {
             if (array.get(i).longValue() == value)
@@ -990,6 +1021,7 @@ public final class CacheService extends IntentService {
 
     private final static void populateMediaItemsForSets(final Context context, final ArrayList<MediaSet> sets,
             final LongSparseArray<MediaSet> acceleratedSets, boolean useWhere) {
+        cacheLog();
         if (sets == null || sets.size() == 0 || Thread.interrupted()) {
             return;
         }
@@ -1059,6 +1091,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final void writeSetsToCache(final ArrayList<MediaSet> sets) {
+        cacheLog();
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final int numSets = sets.size();
         final DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(bos, 256));
@@ -1089,6 +1122,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final void writeItemsToCache(final ArrayList<MediaSet> sets) {
+        cacheLog();
         final int numSets = sets.size();
         for (int i = 0; i < numSets; ++i) {
             if (Thread.interrupted()) {
@@ -1100,6 +1134,7 @@ public final class CacheService extends IntentService {
     }
 
     private static final void writeItemsForASet(final MediaSet set) {
+        cacheLog();
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         final DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(bos, 256));
         try {
@@ -1141,12 +1176,17 @@ public final class CacheService extends IntentService {
     private static final MediaSet findSet(final long id, final LongSparseArray<MediaSet> acceleratedTable) {
         // This is the accelerated lookup table for the MediaSet based on set
         // id.
+        cacheLog();
         return acceleratedTable.get(id);
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        cacheLog();
         // TODO Auto-generated method stub
+    }
 
+    private static void cacheLog(){
+//        LogUtils.footPrint();
     }
 }

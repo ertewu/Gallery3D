@@ -31,6 +31,7 @@ import android.view.Gravity;
 import android.widget.Toast;
 
 import com.cooliris.app.App;
+import com.cooliris.app.LogUtils;
 import com.cooliris.media.MediaClustering.Cluster;
 
 public final class MediaFeed implements Runnable {
@@ -79,6 +80,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public MediaFeed(Context context, DataSource dataSource, Listener listener) {
+        feedLog();
         mContext = context;
         mListener = listener;
         mDataSource = dataSource;
@@ -88,6 +90,7 @@ public final class MediaFeed implements Runnable {
 
     //shutdown 只是把各种运行时数据全清空了
     public void shutdown() {
+        feedLog();
         mIsShutdown = true;
         if (mDataSourceThread != null) {
             mDataSource.shutdown();
@@ -120,6 +123,7 @@ public final class MediaFeed implements Runnable {
     }
 
     private void repeatShuttingDownThread(Thread targetThread) {
+        feedLog();
         for (int i = 0; i < NUM_INTERRUPT_RETRIES && targetThread.isAlive(); ++i) {
             targetThread.interrupt();
             try {
@@ -137,6 +141,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void setVisibleRange(int begin, int end) {
+        feedLog();
         if (begin != mVisibleRange.begin || end != mVisibleRange.end) {
             mVisibleRange.begin = begin;
             mVisibleRange.end = end;
@@ -150,6 +155,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void setFilter(MediaFilter filter) {
+        feedLog();
         mMediaFilter = filter;
         mMediaFilteredSet = null;
         if (mListener != null) {
@@ -159,6 +165,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void removeFilter() {
+        feedLog();
         mMediaFilter = null;
         mMediaFilteredSet = null;
         if (mListener != null) {
@@ -169,10 +176,12 @@ public final class MediaFeed implements Runnable {
     }
 
     public ArrayList<MediaSet> getMediaSets() {
+        feedLog();
         return mMediaSets;
     }
 
     public MediaSet getMediaSet(final long setId) {
+        feedLog();
         if (setId != Shared.INVALID) {
             try {
                 int mMediaSetsSize = mMediaSets.size();
@@ -191,14 +200,17 @@ public final class MediaFeed implements Runnable {
     }
 
     public MediaSet getFilteredSet() {
+        feedLog();
         return mMediaFilteredSet;
     }
 
     public MediaSet addMediaSet(final long setId, DataSource dataSource) {
+        feedLog();
         MediaSet mediaSet = new MediaSet(dataSource);
         mediaSet.mId = setId;
         mMediaSets.add(mediaSet);
         if (mDataSourceThread != null && !mDataSourceThread.isAlive()) {
+            LogUtils.printStackTrace("addMediaSet");
             mDataSourceThread.start();
         }
         mMediaFeedNeedsToRun = true;
@@ -206,10 +218,12 @@ public final class MediaFeed implements Runnable {
     }
 
     public DataSource getDataSource() {
+        feedLog();
         return mDataSource;
     }
 
     public MediaClustering getClustering() {
+        feedLog();
         if (mExpandedMediaSetIndex != Shared.INVALID && mExpandedMediaSetIndex < mMediaSets.size()) {
             return mClusterSets.get(mMediaSets.get(mExpandedMediaSetIndex));
         }
@@ -217,6 +231,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public ArrayList<Cluster> getClustersForSet(final MediaSet set) {
+        feedLog();
         ArrayList<Cluster> clusters = null;
         if (mClusterSets != null && mClusterSets.containsKey(set)) {
             MediaClustering mediaClustering = mClusterSets.get(set);
@@ -228,6 +243,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void addItemToMediaSet(MediaItem item, MediaSet mediaSet) {
+        feedLog();
         item.mParentMediaSet = mediaSet;
         mediaSet.addItem(item);
         synchronized (mClusterSets) {
@@ -246,6 +262,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void performOperation(final int operation, final ArrayList<MediaBucket> mediaBuckets, final Object data) {
+        feedLog();
         int numBuckets = mediaBuckets.size();
         final ArrayList<MediaBucket> copyMediaBuckets = new ArrayList<MediaBucket>(numBuckets);
         for (int i = 0; i < numBuckets; ++i) {
@@ -299,6 +316,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void removeMediaSet(MediaSet set) {
+        feedLog();
         synchronized (mMediaSets) {
             mMediaSets.remove(set);
         }
@@ -306,6 +324,7 @@ public final class MediaFeed implements Runnable {
     }
 
     private void removeItemFromMediaSet(MediaItem item, MediaSet mediaSet) {
+        feedLog();
         mediaSet.removeItem(item);
         synchronized (mClusterSets) {
             MediaClustering clustering = mClusterSets.get(mediaSet);
@@ -317,11 +336,13 @@ public final class MediaFeed implements Runnable {
     }
 
     public void updateListener(boolean needsLayout) {
+        feedLog();
         mListenerNeedsUpdate = true;
         mListenerNeedsLayout = needsLayout;
     }
 
     public int getNumSlots() {
+        feedLog();
         int currentMediaSetIndex = mExpandedMediaSetIndex;
         ArrayList<MediaSet> mediaSets = mMediaSets;
         int mediaSetsSize = mediaSets.size();
@@ -344,11 +365,13 @@ public final class MediaFeed implements Runnable {
     }
 
     public void copySlotStateFrom(MediaFeed another) {
+        feedLog();
         mExpandedMediaSetIndex = another.mExpandedMediaSetIndex;
         mInClusteringMode = another.mInClusteringMode;
     }
 
     public ArrayList<Integer> getBreaks() {
+        feedLog();
         if (true)
             return null;
         int currentMediaSetIndex = mExpandedMediaSetIndex;
@@ -375,6 +398,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public MediaSet getSetForSlot(int slotIndex) {
+        feedLog();
         if (slotIndex < 0) {
             return null;
         }
@@ -416,15 +440,18 @@ public final class MediaFeed implements Runnable {
     }
 
     public boolean getWaitingForMediaScanner() {
+        feedLog();
         return mWaitingForMediaScanner;
     }
 
     public boolean isLoading() {
+        feedLog();
         return mLoading;
     }
 
 
     public void start() {
+        feedLog();
         final MediaFeed feed = this;
         onResume();
         mLoading = true;
@@ -454,6 +481,7 @@ public final class MediaFeed implements Runnable {
 
     //这个地方是在一开始去load数据的地方，是有一定时间的,但也不是很多，在s2上，只有600ms
     private void loadMediaSets() {
+        feedLog();
         if (mDataSource == null)
             return;
         final ArrayList<MediaSet> sets = mMediaSets;
@@ -505,6 +533,7 @@ public final class MediaFeed implements Runnable {
 
     @Override
 	public void run() {
+        feedLog();
         DataSource dataSource = mDataSource;
         int sleepMs = 10;
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
@@ -734,6 +763,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void expandMediaSet(int mediaSetIndex) {
+        feedLog();
         // We need to check if this slot can be focused or not.
         if (mListener != null) {
             mListener.onFeedAboutToChange(this);
@@ -753,6 +783,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public boolean canExpandSet(int slotIndex) {
+        feedLog();
         int mediaSetIndex = slotIndex;
         if (mediaSetIndex < mMediaSets.size() && mediaSetIndex >= 0) {
             MediaSet set = mMediaSets.get(mediaSetIndex);
@@ -768,10 +799,12 @@ public final class MediaFeed implements Runnable {
     }
 
     public boolean hasExpandedMediaSet() {
+        feedLog();
         return (mExpandedMediaSetIndex != Shared.INVALID);
     }
 
     public boolean restorePreviousClusteringState() {
+        feedLog();
         boolean retVal = disableClusteringIfNecessary();
         if (retVal) {
             if (mListener != null) {
@@ -784,6 +817,7 @@ public final class MediaFeed implements Runnable {
     }
 
     private boolean disableClusteringIfNecessary() {
+        feedLog();
         if (mInClusteringMode) {
             // Disable clustering.
             mInClusteringMode = false;
@@ -794,10 +828,12 @@ public final class MediaFeed implements Runnable {
     }
 
     public boolean isClustered() {
+        feedLog();
         return mInClusteringMode;
     }
 
     public MediaSet getCurrentSet() {
+        feedLog();
         if (mExpandedMediaSetIndex != Shared.INVALID && mExpandedMediaSetIndex < mMediaSets.size()) {
             return mMediaSets.get(mExpandedMediaSetIndex);
         }
@@ -805,6 +841,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void performClustering() {
+        feedLog();
         if (mListener != null) {
             mListener.onFeedAboutToChange(this);
         }
@@ -829,6 +866,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void moveSetToFront(MediaSet mediaSet) {
+        feedLog();
         ArrayList<MediaSet> mediaSets = mMediaSets;
         int numSets = mediaSets.size();
         if (numSets == 0) {
@@ -861,6 +899,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public MediaSet replaceMediaSet(long setId, DataSource dataSource) {
+        feedLog();
         Log.i(TAG, "Replacing media set " + setId);
         final MediaSet set = getMediaSet(setId);
         if (set != null)
@@ -869,14 +908,17 @@ public final class MediaFeed implements Runnable {
     }
 
     public void setSingleImageMode(boolean singleImageMode) {
+        feedLog();
         mSingleImageMode = singleImageMode;
     }
 
     public boolean isSingleImageMode() {
+        feedLog();
         return mSingleImageMode;
     }
 
     public MediaSet getExpandedMediaSet() {
+        feedLog();
         if (mExpandedMediaSetIndex == Shared.INVALID)
             return null;
         if (mExpandedMediaSetIndex >= mMediaSets.size())
@@ -885,6 +927,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void refresh() {
+        feedLog();
         if (mDataSource != null) {
             synchronized (mRequestedRefreshUris) {
                 //是因为一个datasource，可能会有好几个固定的uri，所以才要二维数组的？
@@ -894,6 +937,7 @@ public final class MediaFeed implements Runnable {
     }
 
     private void refresh(final String[] databaseUris) {
+        feedLog();
         synchronized (mMediaSets) {
             if (mDataSource != null) {
                 //还要sync，这看样子挺严重的
@@ -908,6 +952,7 @@ public final class MediaFeed implements Runnable {
      * onPause 我当前看到的，主要是去unregister一个URI 与其对应的 观察者了
      */
     public void onPause() {
+        feedLog();
         final HashMap<String, ContentObserver> observers = mContentObservers;
         final int numObservers = observers.size();
 
@@ -935,6 +980,7 @@ public final class MediaFeed implements Runnable {
      * onResume 我当前看到的，主要是为dataSource中的源数据的uri们，添加了观察者，当然有change时的动作
      */
     public void onResume() {
+        feedLog();
         final Context context = mContext;
         final DataSource dataSource = mDataSource;
         if (context == null || dataSource == null)
@@ -943,12 +989,9 @@ public final class MediaFeed implements Runnable {
         final String[] uris = dataSource.getDatabaseUris();
         final HashMap<String, ContentObserver> observers = mContentObservers;
         if (context instanceof Gallery) {
-            final Gallery gallery = (Gallery) context;
-
             //因为我已知只有一个uri，所以把下边的作精简得了
-            final ContentResolver cr = context.getContentResolver();
             final String uri = uris[0];
-            //取到了一个URI所对应的ContentObserver,如果是空，其实是给对应的URI创建了一个ContentObserver
+            final ContentResolver cr = context.getContentResolver();
             final ContentObserver presentObserver = observers.get(uri);
             if (presentObserver == null) {
                 final Handler handler = App.get(context).getHandler();
@@ -966,5 +1009,9 @@ public final class MediaFeed implements Runnable {
             }
         }
         refresh();
+    }
+
+    private static void feedLog(){
+//        LogUtils.footPrint();
     }
 }

@@ -1,0 +1,66 @@
+
+/××
+Thread id 1   Thread name:main
+×/
+01-15 00:09:09.585: I/ertewu2(5821): Thread id:1|Thread name:main|ClassName:CacheService--DiskCache|MethodName:getCachePath--<init>|RowIndex:145
+01-15 00:09:09.675: I/ertewu2(5821): Thread id:1|Thread name:main|ClassName:CacheService--DiskCache|MethodName:getCachePath--<init>|RowIndex:145
+01-15 00:09:09.715: I/ertewu2(5821): Thread id:1|Thread name:main|ClassName:CacheService--DiskCache|MethodName:getCachePath--<init>|RowIndex:145
+01-15 00:09:09.755: I/ertewu2(5821): Thread id:1|Thread name:main|ClassName:CacheService--DiskCache|MethodName:getCachePath--<init>|RowIndex:145
+01-15 00:09:09.955: I/ertewu2(5821): Thread id:1|Thread name:main|ClassName:CacheService--DiskCache|MethodName:getCachePath--<init>|RowIndex:145
+
+
+/××
+Thread id 18  name:MediaSets       这个是MediaFeed中的   mDataSourceThread，是start函数带起来的
+×/
+
+01-15 00:09:09.975: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--LocalDataSource|MethodName:computeDirtySets--refresh|RowIndex:900
+01-15 00:09:10.135: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:markDirty--computeDirtySets|RowIndex:178
+01-15 00:09:10.215: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:addNoDupe--computeDirtySets|RowIndex:1012
+
+01-15 00:09:10.305: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--LocalDataSource|MethodName:loadMediaSets--loadMediaSets|RowIndex:215
+01-15 00:09:10.335: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:syncCache--loadMediaSets|RowIndex:354
+01-15 00:09:10.345: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:isCacheReady--syncCache|RowIndex:163
+01-15 00:09:10.355: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:refresh--syncCache|RowIndex:805
+01-15 00:09:10.385: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:putLocaleForAlbumCache--refresh|RowIndex:669
+01-15 00:09:10.495: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:findSet--refresh|RowIndex:1178
+01-15 00:09:10.525: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:writeSetsToCache--refresh|RowIndex:1093
+01-15 00:09:10.565: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:populateMediaItemsForSets--refresh|RowIndex:1023
+01-15 00:09:10.575: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:populateMediaItemFromCursor--populateMediaItemsForSets|RowIndex:375
+01-15 00:09:10.575: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:findSet--populateMediaItemsForSets|RowIndex:1178
+01-15 00:09:10.585: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:writeItemsToCache--populateMediaItemsForSets|RowIndex:1124
+01-15 00:09:10.585: I/ertewu2(5821): Thread id:18|Thread name:MediaSets|ClassName:CacheService--CacheService|MethodName:writeItemsForASet--writeItemsToCache|RowIndex:1136
+
+/××
+Thread id 17 name:MediaFeed   这个是mDataSourceThread 线程，但是这个线程是哪起来的？只有addMediaSet 这一个地方大概
+打印出来了，调用是这样的：
+（addMediaSet，LocalDataSource.refresh r71，ConcatenatedDataSource.refresh r86，MediaFeed.loadMediaSets r494，MediaFeed. r472 即mAlbumSourceThread中）
+×/
+
+01-15 00:09:10.285: I/ertewu2(5821): Thread id:17|Thread name:MediaFeed|ClassName:CacheService--LocalDataSource|MethodName:computeDirtySets--refresh|RowIndex:900
+01-15 00:09:10.345: I/ertewu2(5821): Thread id:17|Thread name:MediaFeed|ClassName:CacheService--CacheService|MethodName:markDirty--computeDirtySets|RowIndex:178
+01-15 00:09:10.385: I/ertewu2(5821): Thread id:17|Thread name:MediaFeed|ClassName:CacheService--CacheService|MethodName:addNoDupe--computeDirtySets|RowIndex:1012
+01-15 00:09:10.665: I/ertewu2(5821): Thread id:17|Thread name:MediaFeed|ClassName:CacheService--LocalDataSource|MethodName:loadMediaItemsIntoMediaFeed--loadItemsForSet|RowIndex:299
+01-15 00:09:10.675: I/ertewu2(5821): Thread id:17|Thread name:MediaFeed|ClassName:CacheService--CacheService|MethodName:syncCache--loadMediaItemsIntoMediaFeed|RowIndex:354
+01-15 00:09:10.675: I/ertewu2(5821): Thread id:17|Thread name:MediaFeed|ClassName:CacheService--CacheService|MethodName:isCacheReady--syncCache|RowIndex:163
+01-15 00:09:10.675: I/ertewu2(5821): Thread id:17|Thread name:MediaFeed|ClassName:CacheService--CacheService|MethodName:isCacheReady--syncCache|RowIndex:163
+
+
+//以上得出结论，实际上线程调用是这样的  ，MediaFeed.start 调用了mAlbumSourceThread.start（即MediaSets线程），而这个线程 会调用loadDataSets 函数，
+然后loadDataSets函数调用了ConcatenatedDataSource的refresh函数，进而调用了LocalDataSource的refresh函数，
+而localDataSource的refresh函数又去调用了MediaFeed的 addMediaSet函数，于是又开启了 MediaFeed线程
+
+
+----------------
+Thread id 15 name TextureLoad 
+
+01-15 00:09:10.715: I/ertewu2(5821): Thread id:15|Thread name:TextureLoad|ClassName:CacheService--MediaItemTexture|MethodName:queryThumbnail--load|RowIndex:432
+01-15 00:09:10.755: I/ertewu2(5821): Thread id:15|Thread name:TextureLoad|ClassName:CacheService--CacheService|MethodName:queryThumbnail--queryThumbnail|RowIndex:481
+01-15 00:09:10.755: I/ertewu2(5821): Thread id:15|Thread name:TextureLoad|ClassName:CacheService--CacheService|MethodName:buildThumbnailForId--queryThumbnail|RowIndex:552
+01-15 00:09:10.795: I/ertewu2(5821): Thread id:15|Thread name:TextureLoad|ClassName:CacheService--CacheService|MethodName:writeBitmapToCache--buildThumbnailForId|RowIndex:590
+
+
+-------------------
+Thread id 13 name TextureLoad
+01-15 00:09:10.885: I/ertewu2(5821): Thread id:13|Thread name:TextureLoad|ClassName:CacheService--MediaItemTexture|MethodName:queryThumbnail--load|RowIndex:432
+01-15 00:09:10.915: I/ertewu2(5821): Thread id:13|Thread name:TextureLoad|ClassName:CacheService--CacheService|MethodName:queryThumbnail--queryThumbnail|RowIndex:481
+

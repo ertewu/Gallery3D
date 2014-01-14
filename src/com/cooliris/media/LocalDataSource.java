@@ -10,8 +10,8 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
-import android.util.Log;
 
+import com.cooliris.app.LogUtils;
 import com.cooliris.cache.CacheService;
 
 /**只看到122行就可以了*/
@@ -61,7 +61,7 @@ public class LocalDataSource implements DataSource {
         long[] ids = CacheService.computeDirtySets(mContext);
         int numDirtySets = ids.length;
         // 第一次这里是19,这是个什么东西呢？
-        Log.i("ertewu", "LocalDataSource numDirtySet is:" + numDirtySets);
+        LogUtils.log("LocalDataSource numDirtySet is:" + numDirtySets);
         for (int i = 0; i < numDirtySets; ++i) {
             long setId = ids[i];
             if (feed.getMediaSet(setId) != null) {
