@@ -96,7 +96,8 @@ public class MediaSet {
         mItemsLookup = new LongSparseArray<MediaItem>();
         mItemsLookup.clear();
         mDataSource = dataSource;
-        // TODO(Venkat): Can we move away from this dummy item setup? 意思是说这个item是个假的？
+        // TODO(Venkat): Can we move away from this dummy item setup?
+        // 这个item就是假的..
         MediaItem item = new MediaItem();
         item.mId = Shared.INVALID;
         item.mParentMediaSet = this;

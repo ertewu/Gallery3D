@@ -68,6 +68,7 @@ public class LocalDataSource implements DataSource {
                 MediaSet newSet = feed.replaceMediaSet(setId, this);
                 newSet.generateTitle(true);
             } else {
+                // 刚开机的时候，显示是走得这里..
                 MediaSet mediaSet = feed.addMediaSet(setId, this);
                 mediaSet.generateTitle(true);
             }

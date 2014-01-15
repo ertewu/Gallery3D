@@ -459,6 +459,7 @@ public final class MediaFeed implements Runnable {
         mDataSourceThread = new Thread(this);
         mDataSourceThread.setName("MediaFeed");
         mIsShutdown = false;
+        // 整个mAlbumSourceThread就只是loadMediaSets 这个函数
         mAlbumSourceThread = new Thread(new Runnable() {
             @Override
 			public void run() {
@@ -486,13 +487,18 @@ public final class MediaFeed implements Runnable {
             return;
         final ArrayList<MediaSet> sets = mMediaSets;
         synchronized (sets) {
+            // 看上去上边只是给每一个sets置了标志位，以刚开机来说，这个size其实就是0,所以无所谓了..回去是不是也删一下..
             final int numSets = sets.size();
             for (int i = 0; i < numSets; ++i) {
                 final MediaSet set = sets.get(i);
                 set.mFlagForDelete = true;
             }
+
+            // 下边这两句话东西才多,只有一个元素的话，很简单，refresh 就是生成了那一个MediaSets元素
             mDataSource.refresh(MediaFeed.this, mDataSource.getDatabaseUris());
             mDataSource.loadMediaSets(MediaFeed.this);
+
+            // 下边一段实际上就是删了一些MediaSet，问题是为什么以这种方式删除
             final ArrayList<MediaSet> setsToRemove = new ArrayList<MediaSet>();
             for (int i = 0; i < numSets; ++i) {
                 final MediaSet set = sets.get(i);
