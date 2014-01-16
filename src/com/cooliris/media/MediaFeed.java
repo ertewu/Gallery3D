@@ -1,34 +1,12 @@
-/*
- * Copyright (C) 2009 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.cooliris.media;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.ContentObserver;
-import android.net.Uri;
-import android.os.Handler;
 import android.os.Process;
+import android.provider.MediaStore.Images;
 import android.util.Log;
-import android.view.Gravity;
-import android.widget.Toast;
 
 import com.cooliris.app.App;
 import com.cooliris.app.LogUtils;
@@ -41,9 +19,6 @@ public final class MediaFeed implements Runnable {
     public static final int OPERATION_CROP = 2;
 
     private static final int NUM_ITEMS_LOOKAHEAD = 60;
-    private static final int NUM_INTERRUPT_RETRIES = 30;
-    private static final int JOIN_TIMEOUT = 50;
-
     private IndexRange mVisibleRange = new IndexRange();
     private IndexRange mBufferedRange = new IndexRange();
     private ArrayList<MediaSet> mMediaSets = new ArrayList<MediaSet>();
@@ -53,7 +28,7 @@ public final class MediaFeed implements Runnable {
     private boolean mMediaFeedNeedsToRun = false;
     private MediaSet mSingleWrapper = new MediaSet();
     private boolean mInClusteringMode = false;
-    //这个是干什么的，不太懂的..
+    // 这个是干什么的，不太懂的..
     private HashMap<MediaSet, MediaClustering> mClusterSets = new HashMap<MediaSet, MediaClustering>(32);
     private int mExpandedMediaSetIndex = Shared.INVALID;
     private MediaFilter mMediaFilter;
@@ -62,16 +37,15 @@ public final class MediaFeed implements Runnable {
     private Thread mDataSourceThread = null;
     private Thread mAlbumSourceThread = null;
     private boolean mListenerNeedsLayout;
-    private boolean mWaitingForMediaScanner;
     private boolean mSingleImageMode;
     private boolean mLoading;
-    private HashMap<String, ContentObserver> mContentObservers = new HashMap<String, ContentObserver>();
-    /**这是一个二维的数组？*/
-    private ArrayList<String[]> mRequestedRefreshUris = new ArrayList<String[]>();
+
+    private String mUri = Images.Media.EXTERNAL_CONTENT_URI.toString();
+    String[] mUriArray = new String[] { mUri };
     private volatile boolean mIsShutdown = false;
 
     /**
-     *GridLayer实现了这个接口，这个接口看样子是很有用的，却没有注释..GridLayer里边的onFeedChanged实现了超级多的东西
+     * GridLayer实现了这个接口，这个接口看样子是很有用的，却没有注释..GridLayer里边的onFeedChanged实现了超级多的东西
      */
     public interface Listener {
         public abstract void onFeedAboutToChange(MediaFeed feed);
@@ -86,58 +60,6 @@ public final class MediaFeed implements Runnable {
         mDataSource = dataSource;
         mSingleWrapper.setNumExpectedItems(1);
         mLoading = true;
-    }
-
-    //shutdown 只是把各种运行时数据全清空了
-    public void shutdown() {
-        feedLog();
-        mIsShutdown = true;
-        if (mDataSourceThread != null) {
-            mDataSource.shutdown();
-            repeatShuttingDownThread(mDataSourceThread);
-            mDataSourceThread = null;
-        }
-        if (mAlbumSourceThread != null) {
-            repeatShuttingDownThread(mAlbumSourceThread);
-            mAlbumSourceThread = null;
-        }
-        int numSets = mMediaSets.size();
-        for (int i = 0; i < numSets; ++i) {
-            MediaSet set = mMediaSets.get(i);
-            set.clear();
-        }
-        synchronized (mMediaSets) {
-            mMediaSets.clear();
-        }
-        int numClusters = mClusterSets.size();
-        for (int i = 0; i < numClusters; ++i) {
-            MediaClustering mc = mClusterSets.get(i);
-            if (mc != null) {
-                mc.clear();
-            }
-        }
-        mClusterSets.clear();
-        mListener = null;
-        mDataSource = null;
-        mSingleWrapper = null;
-    }
-
-    private void repeatShuttingDownThread(Thread targetThread) {
-        feedLog();
-        for (int i = 0; i < NUM_INTERRUPT_RETRIES && targetThread.isAlive(); ++i) {
-            targetThread.interrupt();
-            try {
-                targetThread.join(JOIN_TIMEOUT);
-            } catch (InterruptedException e) {
-                Log.w(TAG, "Cannot stop the thread: " + targetThread.getName(), e);
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-
-        if (targetThread.isAlive()) {
-            Log.w(TAG, "Cannot stop the thread: " + targetThread.getName());
-        }
     }
 
     public void setVisibleRange(int begin, int end) {
@@ -273,7 +195,7 @@ public final class MediaFeed implements Runnable {
         }
         Thread operationThread = new Thread(new Runnable() {
             @Override
-			public void run() {
+            public void run() {
                 ArrayList<MediaBucket> mediaBuckets = copyMediaBuckets;
                 if (operation == OPERATION_DELETE) {
                     int numBuckets = mediaBuckets.size();
@@ -370,33 +292,6 @@ public final class MediaFeed implements Runnable {
         mInClusteringMode = another.mInClusteringMode;
     }
 
-    public ArrayList<Integer> getBreaks() {
-        feedLog();
-        if (true)
-            return null;
-        int currentMediaSetIndex = mExpandedMediaSetIndex;
-        ArrayList<MediaSet> mediaSets = mMediaSets;
-        int mediaSetsSize = mediaSets.size();
-        if (currentMediaSetIndex == Shared.INVALID || currentMediaSetIndex >= mediaSetsSize)
-            return null;
-        MediaSet set = mediaSets.get(currentMediaSetIndex);
-        MediaClustering clustering = mClusterSets.get(set);
-        if (clustering != null) {
-            clustering.compute(null, true);
-            final ArrayList<Cluster> clusters = clustering.getClustersForDisplay();
-            int numClusters = clusters.size();
-            final ArrayList<Integer> retVal = new ArrayList<Integer>(numClusters);
-            int size = 0;
-            for (int i = 0; i < numClusters; ++i) {
-                size += clusters.get(i).getItems().size();
-                retVal.add(size);
-            }
-            return retVal;
-        } else {
-            return null;
-        }
-    }
-
     public MediaSet getSetForSlot(int slotIndex) {
         feedLog();
         if (slotIndex < 0) {
@@ -439,40 +334,29 @@ public final class MediaFeed implements Runnable {
         return null;
     }
 
-    public boolean getWaitingForMediaScanner() {
-        feedLog();
-        return mWaitingForMediaScanner;
-    }
-
     public boolean isLoading() {
         feedLog();
         return mLoading;
     }
 
-
     public void start() {
         feedLog();
-        final MediaFeed feed = this;
-        onResume();
         mLoading = true;
-        //this是指runnable
+        // this是指runnable
         mDataSourceThread = new Thread(this);
         mDataSourceThread.setName("MediaFeed");
         mIsShutdown = false;
         // 整个mAlbumSourceThread就只是loadMediaSets 这个函数
         mAlbumSourceThread = new Thread(new Runnable() {
             @Override
-			public void run() {
+            public void run() {
                 if (mContext == null)
                     return;
                 Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-                DataSource dataSource = mDataSource;
-                // We must wait while the SD card is mounted or the MediaScanner
-                // is running.
-                if (dataSource != null) {
+                if (mDataSource != null) {
                     loadMediaSets();
                 }
-                //以前这里关于sd卡扫描的部分，大部分都没有用，于是我决定删除它们..
+                // 以前这里关于sd卡扫描的部分，大部分都没有用，于是我决定删除它们..
                 mLoading = false;
             }
         });
@@ -480,96 +364,30 @@ public final class MediaFeed implements Runnable {
         mAlbumSourceThread.start();
     }
 
-    //这个地方是在一开始去load数据的地方，是有一定时间的,但也不是很多，在s2上，只有600ms
+    // 这个地方是在一开始去load数据的地方，是有一定时间的,但也不是很多，在s2上，只有600ms
     private void loadMediaSets() {
         feedLog();
         if (mDataSource == null)
             return;
         final ArrayList<MediaSet> sets = mMediaSets;
         synchronized (sets) {
-            // 看上去上边只是给每一个sets置了标志位，以刚开机来说，这个size其实就是0,所以无所谓了..回去是不是也删一下..
-            final int numSets = sets.size();
-            for (int i = 0; i < numSets; ++i) {
-                final MediaSet set = sets.get(i);
-                set.mFlagForDelete = true;
-            }
-
-            // 下边这两句话东西才多,只有一个元素的话，很简单，refresh 就是生成了那一个MediaSets元素
             mDataSource.refresh(MediaFeed.this, mDataSource.getDatabaseUris());
-            mDataSource.loadMediaSets(MediaFeed.this);
-
-            // 下边一段实际上就是删了一些MediaSet，问题是为什么以这种方式删除
-            final ArrayList<MediaSet> setsToRemove = new ArrayList<MediaSet>();
-            for (int i = 0; i < numSets; ++i) {
-                final MediaSet set = sets.get(i);
-                if (set.mFlagForDelete) {
-                    setsToRemove.add(set);
-                }
-            }
-            int numSetsToRemove = setsToRemove.size();
-            for (int i = 0; i < numSetsToRemove; ++i) {
-                sets.remove(setsToRemove.get(i));
-            }
-            setsToRemove.clear();
         }
         mMediaFeedNeedsToRun = true;
         updateListener(false);
     }
 
-    private void showToast(final String string, final int duration) {
-        showToast(string, duration, false);
-    }
-
-    private void showToast(final String string, final int duration, final boolean centered) {
-        if (mContext != null && !App.get(mContext).isPaused()) {
-            App.get(mContext).getHandler().post(new Runnable() {
-                @Override
-				public void run() {
-                    if (mContext != null) {
-                        Toast toast = Toast.makeText(mContext, string, duration);
-                        if (centered) {
-                            toast.setGravity(Gravity.CENTER, 0, 0);
-                        }
-                        toast.show();
-                    }
-                }
-            });
-        }
-    }
-
     @Override
-	public void run() {
+    public void run() {
         feedLog();
         DataSource dataSource = mDataSource;
         int sleepMs = 10;
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
         if (dataSource != null) {
+            //没想到这个线程是一直开着的？ 为什么要这么一直刷..
             while (!Thread.interrupted() && !mIsShutdown) {
-                String[] databaseUris = null;
+                String[] databaseUris = mUriArray;
                 boolean performRefresh = false;
-                synchronized (mRequestedRefreshUris) {
-                    if (mRequestedRefreshUris.size() > 0) {
-                        // We prune this first.
-                        int numRequests = mRequestedRefreshUris.size();
-                        for (int i = 0; i < numRequests; ++i) {
-                            databaseUris = ArrayUtils.addAll(databaseUris, mRequestedRefreshUris.get(i));
-                        }
-                        mRequestedRefreshUris.clear();
-                        performRefresh = true;
-                        // We need to eliminate duplicate uris in this array
-                        final HashMap<String, String> uris = new HashMap<String, String>();
-                        if (databaseUris != null) {
-                            int numUris = databaseUris.length;
-                            for (int i = 0; i < numUris; ++i) {
-                                final String uri = databaseUris[i];
-                                if (uri != null)
-                                    uris.put(uri, uri);
-                            }
-                        }
-                        databaseUris = new String[0];
-                        databaseUris = uris.keySet().toArray(databaseUris);
-                    }
-                }
                 boolean settingFeedAboutToChange = false;
                 if (performRefresh) {
                     if (dataSource != null) {
@@ -587,18 +405,14 @@ public final class MediaFeed implements Runnable {
                         synchronized (mMediaSets) {
                             mListener.onFeedChanged(this, mListenerNeedsLayout);
                         }
-                    try {
-                        Thread.sleep(sleepMs);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                } else {
-                    try {
-                        Thread.sleep(sleepMs);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
                 }
+
+                try {
+                    Thread.sleep(sleepMs);
+                } catch (InterruptedException e) {
+                    return;
+                }
+
                 sleepMs = 300;
                 if (!mMediaFeedNeedsToRun)
                     continue;
@@ -932,92 +746,7 @@ public final class MediaFeed implements Runnable {
         return mMediaSets.get(mExpandedMediaSetIndex);
     }
 
-    public void refresh() {
-        feedLog();
-        if (mDataSource != null) {
-            synchronized (mRequestedRefreshUris) {
-                //是因为一个datasource，可能会有好几个固定的uri，所以才要二维数组的？
-                mRequestedRefreshUris.add(mDataSource.getDatabaseUris());
-            }
-        }
-    }
-
-    private void refresh(final String[] databaseUris) {
-        feedLog();
-        synchronized (mMediaSets) {
-            if (mDataSource != null) {
-                //还要sync，这看样子挺严重的
-                synchronized (mRequestedRefreshUris) {
-                    mRequestedRefreshUris.add(databaseUris);
-                }
-            }
-        }
-    }
-
-    /**
-     * onPause 我当前看到的，主要是去unregister一个URI 与其对应的 观察者了
-     */
-    public void onPause() {
-        feedLog();
-        final HashMap<String, ContentObserver> observers = mContentObservers;
-        final int numObservers = observers.size();
-
-        if (numObservers > 0) {
-            String[] uris = new String[numObservers];
-            final Set<String> keySet = observers.keySet();
-            if (keySet != null) {
-                uris = keySet.toArray(uris);
-                final int numUris = uris.length;
-                final ContentResolver cr = mContext.getContentResolver();
-                for (int i = 0; i < numUris; ++i) {
-                    final String uri = uris[i];
-                    if (uri != null) {
-                        final ContentObserver observer = observers.get(uri);
-                        cr.unregisterContentObserver(observer);
-                        observers.remove(uri);
-                    }
-                }
-            }
-        }
-        observers.clear();
-    }
-
-    /**
-     * onResume 我当前看到的，主要是为dataSource中的源数据的uri们，添加了观察者，当然有change时的动作
-     */
-    public void onResume() {
-        feedLog();
-        final Context context = mContext;
-        final DataSource dataSource = mDataSource;
-        if (context == null || dataSource == null)
-            return;
-        // We setup the listeners for this datasource
-        final String[] uris = dataSource.getDatabaseUris();
-        final HashMap<String, ContentObserver> observers = mContentObservers;
-        if (context instanceof Gallery) {
-            //因为我已知只有一个uri，所以把下边的作精简得了
-            final String uri = uris[0];
-            final ContentResolver cr = context.getContentResolver();
-            final ContentObserver presentObserver = observers.get(uri);
-            if (presentObserver == null) {
-                final Handler handler = App.get(context).getHandler();
-                final ContentObserver observer = new ContentObserver(handler) {
-                    @Override
-                    public void onChange(boolean selfChange) {
-                        //所谓refresh，就是把这个URI加进mRequestedRefresh这个string二维数组里边去了,但是为什么非要用数组，还不甚了解
-                        if (!mWaitingForMediaScanner) {
-                            MediaFeed.this.refresh(new String[] { uri });
-                        }
-                    }
-                };
-                cr.registerContentObserver(Uri.parse(uri), true, observer);
-                observers.put(uri, observer);
-            }
-        }
-        refresh();
-    }
-
-    private static void feedLog(){
-//        LogUtils.footPrint();
+    private static void feedLog() {
+        // LogUtils.footPrint();
     }
 }

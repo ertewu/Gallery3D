@@ -11,7 +11,6 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 
-import com.cooliris.app.LogUtils;
 import com.cooliris.cache.CacheService;
 
 /**只看到122行就可以了*/
@@ -57,11 +56,8 @@ public class LocalDataSource implements DataSource {
     /** 这里是真正沿着数据刷新内容的地方?用uri,但我想知道他妈的databaseUris 在哪里用到了？ */
     @Override
     public void refresh(final MediaFeed feed, final String[] databaseUris) {
-        // We check to see what has changed.
         long[] ids = CacheService.computeDirtySets(mContext);
         int numDirtySets = ids.length;
-        // 第一次这里是19,这是个什么东西呢？
-        LogUtils.log("LocalDataSource numDirtySet is:" + numDirtySets);
         for (int i = 0; i < numDirtySets; ++i) {
             long setId = ids[i];
             if (feed.getMediaSet(setId) != null) {

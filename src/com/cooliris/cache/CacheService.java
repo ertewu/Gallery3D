@@ -38,7 +38,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.MergeCursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -70,8 +69,9 @@ import com.cooliris.media.Utils;
 
 public final class CacheService extends IntentService {
     public static final String ACTION_CACHE = "com.cooliris.cache.action.CACHE";
-    // mediaSet都是从这个diskCache里边去找的
+    // mediaSet都是从这个diskCache里边去找的,这个用得挺多的
     public static final DiskCache sAlbumCache = new DiskCache("local-album-cache");
+    //sMetaAlbumCache只在computeDirtySets中用到了一下..
     public static final DiskCache sMetaAlbumCache = new DiskCache("local-meta-cache");
     public static final DiskCache sSkipThumbnailIds = new DiskCache("local-skip-cache");
 
@@ -904,11 +904,7 @@ public final class CacheService extends IntentService {
         final String where = Images.ImageColumns.BUCKET_ID + "!=0) GROUP BY (" + Images.ImageColumns.BUCKET_ID + " ";
         ArrayList<Long> retVal = new ArrayList<Long>();
         try {
-            final Cursor cursorImages = cr.query(uriImages, SENSE_PROJECTION, where, null, null);
-            Cursor[] cursors = new Cursor[1];
-            cursors[0] = cursorImages;
-            // 操？还可以这样玩的..mergeCursor..
-            final MergeCursor cursor = new MergeCursor(cursors);
+            final Cursor cursor = cr.query(uriImages, SENSE_PROJECTION, where, null, null);
             final ArrayList<Long> setIds = new ArrayList<Long>();
             final ArrayList<Long> maxAdded = new ArrayList<Long>();
             final ArrayList<Integer> counts = new ArrayList<Integer>();
@@ -1009,6 +1005,7 @@ public final class CacheService extends IntentService {
         return retValIds;
     }
 
+    //这个意思就是不要伪加，以前如果有这个，就不要再加了..,明显这只是个util级别函数
     private static final void addNoDupe(ArrayList<Long> array, long value) {
         cacheLog();
         int size = array.size();

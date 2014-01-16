@@ -191,15 +191,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         return mHud;
     }
 
-    public void shutdown() {
-        if (mMediaFeed != null) {
-            mMediaFeed.shutdown();
-        }
-        mContext = null;
-        mSelectedBucketList.clear();
-        mView = null;
-    }
-
     public void stop() {
         endSlideshow();
         getBackgroundLayer().clear();
@@ -442,7 +433,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mMediaFeed = new MediaFeed(mContext, dataSource, this);
         if (olderFeed != null) {
             mMediaFeed.copySlotStateFrom(olderFeed);
-            olderFeed.shutdown();
             mDisplayList.clear();
             getBackgroundLayer().clear();
         }
@@ -540,7 +530,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             if (hud.getMode() != HudLayer.MODE_NORMAL)
                 hud.setMode(HudLayer.MODE_NORMAL);
         }
-        if (view.elapsedLoadingExpensiveTextures() > 150 || (mMediaFeed != null && mMediaFeed.getWaitingForMediaScanner())) {
+        if (view.elapsedLoadingExpensiveTextures() > 150 || (mMediaFeed != null && false)) {
             mHud.getPathBar().setAnimatedIcons(GridDrawables.TEXTURE_SPINNER);
         } else {
             mHud.getPathBar().setAnimatedIcons(null);
@@ -845,7 +835,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             if (mMediaFeed != null) {
                 mDrawManager.drawBlendedComponents(view, gl, mSelectedAlpha, mState, mHud.getMode(),
                         mTimeElapsedSinceStackViewReady, mTimeElapsedSinceGridViewReady, mSelectedBucketList, mMarkedBucketList,
-                        mMediaFeed.getWaitingForMediaScanner() || mFeedAboutToChange || mMediaFeed.isLoading());
+                        false || mFeedAboutToChange || mMediaFeed.isLoading());
             }
         }
     }
@@ -854,12 +844,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mPerformingLayoutChange || !mDeltaAnchorPosition.equals(mDeltaAnchorPositionUncommited)) {
             return;
         }
-        // mOldBreakSlots = mBreakSlots;
-        if (mState == STATE_GRID_VIEW) {
-            final ArrayList<Integer> breaks = mMediaFeed.getBreaks();
-        } else {
-            // mBreakSlots = null;
-        }
+
         mPerformingLayoutChange = true;
         LayoutInterface layout = mLayoutInterface;
         if (oldLayout == null) {
@@ -1530,20 +1515,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         mRequestFocusContentUri = contentUri;
         if (mMediaFeed != null) {
             mMediaFeed.updateListener(false);
-        }
-    }
-
-    @Override
-    public void onResume() {
-        if (mMediaFeed != null) {
-            mMediaFeed.onResume();
-        }
-    }
-
-    @Override
-    public void onPause() {
-        if (mMediaFeed != null) {
-            mMediaFeed.onPause();
         }
     }
 

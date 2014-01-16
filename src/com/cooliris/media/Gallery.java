@@ -108,7 +108,6 @@ public final class Gallery extends Activity {
 			if (dataSource != null) {
 				dataSource.shutdown();
 			}
-			mGridLayer.shutdown();
 		}
 		if (mRenderView != null) {
 			mRenderView.shutdown();
