@@ -9,6 +9,10 @@ public class LogUtils {
     }
 
     public static void footPrint(){
+        footPrint("ertewu");
+    }
+
+    public static void footPrint(String tag){
         String msgToPrint="";
         String className = Thread.currentThread().getStackTrace()[4].getClassName();
         int index = className.lastIndexOf(".");
@@ -32,7 +36,7 @@ public class LogUtils {
                 + "|RowIndex:" + rowIndex + "\n";
 
         msgToPrint = msgToPrint + "\n";
-        log(msgToPrint);
+        Log.i(tag,msgToPrint);
     }
 
     /**

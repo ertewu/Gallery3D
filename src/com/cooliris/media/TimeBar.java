@@ -205,10 +205,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
             MediaSet set = null;
             mShowTime = true;
             if (mState == GridLayer.STATE_GRID_VIEW) {
-                set = feed.getFilteredSet();
-                if (set == null) {
                     set = feed.getCurrentSet();
-                }
             } else {
                 increment = 2;
                 if (!feed.hasExpandedMediaSet()) {
@@ -308,10 +305,10 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
     /*
      * private float getKnobXForPosition(float position) { return position *
      * (mTotalWidth - mKnob.getWidth()); }
-     * 
+     *
      * private float getPositionForKnobX(float knobX) { return Math.max(0f,
      * Math.min(1f, knobX / (mTotalWidth - mKnob.getWidth()))); }
-     * 
+     *
      * private float getScrollForPosition(float position) { return position *
      * (mTotalWidth - mWidth);// - (1f - 2f * position) * MARKER_SPACING_PIXELS;
      * }
@@ -488,6 +485,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
         return true;
     }
 
+    @Override
     public void onFeedChanged(MediaFeed feed, boolean needsLayout) {
         layout();
     }
@@ -518,6 +516,7 @@ public final class TimeBar extends Layer implements MediaFeed.Listener {
         lists.hitTestList.add(this);
     }
 
+    @Override
     public void onFeedAboutToChange(MediaFeed feed) {
         // nothing needs to be done
         return;

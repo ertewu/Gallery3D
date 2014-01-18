@@ -30,7 +30,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 
 import com.cooliris.app.App;
-import com.cooliris.app.LogUtils;
 import com.cooliris.app.Res;
 
 public final class GridLayer extends RootLayer implements MediaFeed.Listener, TimeBar.Listener {
@@ -96,7 +95,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     private ArrayList<MediaItem> mVisibleItems;
 
     private final BackgroundLayer mBackground;
-    private boolean mLocationFilter;
     private float mZoomValue = 1.0f;
     private float mCurrentFocusItemWidth = 1.0f;
     private float mCurrentFocusItemHeight = 1.0f;
@@ -251,12 +249,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         switch (state) {
         case STATE_GRID_VIEW:
             mTimeElapsedSinceGridViewReady = 0.0f;
-            if (feed != null && feedUnchanged == false) {
-                boolean updatedData = feed.restorePreviousClusteringState();
-                if (updatedData) {
-                    performLayout = false;
-                }
-            }
             layoutInterface.mNumRows = numMaxRows;
             layoutInterface.mSpacingX = (int) (10 * App.PIXEL_DENSITY);
             layoutInterface.mSpacingY = (int) (10 * App.PIXEL_DENSITY);
@@ -273,7 +265,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
                                 return;
                             }
                             if (mHud.getAlpha() == 1.0f) {
-                                disableLocationFiltering();
                                 mInputProcessor.clearSelection();
                                 setState(STATE_GRID_VIEW);
                             } else {
@@ -288,12 +279,12 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             }
             break;
         case STATE_TIMELINE:
+            //在我的这个分支中，一直没有这个场景，于是我决定删除一些..
             mTimeElapsedSinceStackViewReady = 0.0f;
             if (feed != null && feedUnchanged == false) {
-                feed.performClustering();
+//                feed.performClustering();
                 performLayout = false;
             }
-            disableLocationFiltering();
             layoutInterface.mNumRows = numMaxRows - 1;
             layoutInterface.mSpacingX = (int) (100 * App.PIXEL_DENSITY);
             layoutInterface.mSpacingY = (int) (70 * App.PIXEL_DENSITY * yStretch);
@@ -317,12 +308,10 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         case STATE_MEDIA_SETS:
             mTimeElapsedSinceStackViewReady = 0.0f;
             if (feed != null && feedUnchanged == false) {
-                feed.restorePreviousClusteringState();
                 mMarkedBucketList.clear();
                 feed.expandMediaSet(Shared.INVALID);
                 performLayout = false;
             }
-            disableLocationFiltering();
             mInputProcessor.clearSelection();
             layoutInterface.mNumRows = numMaxRows - 1;
             layoutInterface.mSpacingX = (int) (100 * App.PIXEL_DENSITY);
@@ -347,34 +336,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         }
     }
 
-    protected void enableLocationFiltering(String label) {
-        if (mLocationFilter == false) {
-            mLocationFilter = true;
-            mHud.getPathBar().pushLabel(Res.drawable.icon_location_small, label, new Runnable() {
-                @Override
-                public void run() {
-                    if (mHud.getAlpha() == 1.0f) {
-                        if (mState == STATE_FULL_SCREEN) {
-                            mInputProcessor.clearSelection();
-                            setState(STATE_GRID_VIEW);
-                        } else {
-                            disableLocationFiltering();
-                        }
-                    } else {
-                        mHud.setAlpha(1.0f);
-                    }
-                }
-            });
-        }
-    }
 
-    protected void disableLocationFiltering() {
-        if (mLocationFilter) {
-            mLocationFilter = false;
-            mMediaFeed.removeFilter();
-            mHud.getPathBar().popLabel();
-        }
-    }
 
     boolean goBack() {
         if (mFeedAboutToChange) {
@@ -382,11 +344,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         }
         int state = mState;
         if (mInputProcessor.getCurrentSelectedSlot() == Shared.INVALID) {
-            if (mLocationFilter) {
-                disableLocationFiltering();
-                setState(STATE_TIMELINE);
-                return true;
-            }
+
         }
         switch (state) {
         case STATE_GRID_VIEW:
@@ -906,7 +864,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     // called on background thread
     @Override
     public synchronized void onFeedChanged(MediaFeed feed, boolean needsLayout) {
-        LogUtils.printStackTrace(null);
         if (!needsLayout && !mFeedAboutToChange) {
             mFeedChanged = true;
             forceRecomputeVisibleRange();
@@ -921,7 +878,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         if (mState == STATE_GRID_VIEW) {
             if (mHud != null) {
                 MediaSet set = feed.getCurrentSet();
-                if (set != null && !mLocationFilter)
+                if (set != null)
                     mHud.getPathBar().changeLabel(set.mNoCountTitleString);
             }
         }
@@ -1183,15 +1140,16 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
     }
 
     public void deleteSelection() {
+        //delete 的操作也已经被我删除去了，否则会导致我看不懂..
         // Delete the selection and exit selection mode.
-        mMediaFeed.performOperation(MediaFeed.OPERATION_DELETE, getSelectedBuckets(), null);
-        deselectAll();
-
-        // If the current set is now empty, return to the parent set.
-        if (mCompleteRange.isEmpty()) {
-            goBack(); // TODO(venkat): This does not work most of the time, can
-            // you take a look?
-        }
+//        mMediaFeed.performOperation(MediaFeed.OPERATION_DELETE, getSelectedBuckets(), null);
+//        deselectAll();
+//
+//        // If the current set is now empty, return to the parent set.
+//        if (mCompleteRange.isEmpty()) {
+//            goBack(); // TODO(venkat): This does not work most of the time, can
+//            // you take a look?
+//        }
     }
 
     void addSlotToSelectedItems(int slotId, boolean removeIfAlreadyAdded, boolean updateCount) {
@@ -1243,8 +1201,7 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         MediaFeed feed = mMediaFeed;
         if (feed == null)
             return false;
-        if (!feed.isClustered()) {
-            // It is not clustering.
+            // It is not clustering.我的分支一直是这样的
             if (!feed.hasExpandedMediaSet()) {
                 if (feed.canExpandSet(slotIndex)) {
                     mCurrentExpandedSlot = slotIndex;
@@ -1255,26 +1212,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
             } else {
                 return true;
             }
-        } else {
-            // Select a cluster, and recompute a new cluster within this
-            // cluster.
-            mCurrentExpandedSlot = slotIndex;
-            mMarkedBucketList.clear();
-            mMarkedBucketList.add(slotIndex, feed, false);
-            goBack();
-            if (metadata) {
-                DisplaySlot slot = mDisplaySlots[slotIndex - mBufferedVisibleRange.begin];
-                if (slot.hasValidLocation()) {
-                    MediaSet set = slot.getMediaSet();
-                    if (set.mReverseGeocodedLocation != null) {
-                        enableLocationFiltering(set.mReverseGeocodedLocation);
-                    }
-                    feed.setFilter(new LocationMediaFilter(set.mMinLatLatitude, set.mMinLonLongitude, set.mMaxLatLatitude,
-                            set.mMaxLonLongitude));
-                }
-            }
-            return false;
-        }
     }
 
     @Override

@@ -14,7 +14,6 @@ import com.cooliris.media.MediaClustering.Cluster;
 
 public final class MediaFeed implements Runnable {
     private final String TAG = "MediaFeed";
-    public static final int OPERATION_DELETE = 0;
 
     private static final int NUM_ITEMS_LOOKAHEAD = 60;
     private IndexRange mVisibleRange = new IndexRange();
@@ -25,7 +24,11 @@ public final class MediaFeed implements Runnable {
     private boolean mListenerNeedsUpdate = false;
     private boolean mMediaFeedNeedsToRun = false;
     private MediaSet mSingleWrapper = new MediaSet();
-    private boolean mInClusteringMode = false;
+    /**
+     * 这个在我的行动内一直是false，于是我就权当false来精简代码好了，<br>
+     * 不过我好像想到了是什么功能，是4张缩略图放在一起来作为MediaSet的缩略图的是么？ private boolean
+     * mInClusteringMode = false;
+     */
     // 这个是干什么的，不太懂的..
     private HashMap<MediaSet, MediaClustering> mClusterSets = new HashMap<MediaSet, MediaClustering>(32);
 
@@ -34,8 +37,6 @@ public final class MediaFeed implements Runnable {
      * 这个index就是当前MediaSet在MediaSets中的索引
      * */
     private int mExpandedMediaSetIndex = Shared.INVALID;
-    private MediaFilter mMediaFilter;
-    private MediaSet mMediaFilteredSet;
     private Context mContext;
     private Thread mDataSourceThread = null;
     private Thread mAlbumSourceThread = null;
@@ -78,27 +79,6 @@ public final class MediaFeed implements Runnable {
         }
     }
 
-    public void setFilter(MediaFilter filter) {
-        feedLog();
-        mMediaFilter = filter;
-        mMediaFilteredSet = null;
-        if (mListener != null) {
-            mListener.onFeedAboutToChange(this);
-        }
-        mMediaFeedNeedsToRun = true;
-    }
-
-    public void removeFilter() {
-        feedLog();
-        mMediaFilter = null;
-        mMediaFilteredSet = null;
-        if (mListener != null) {
-            mListener.onFeedAboutToChange(this);
-            updateListener(true);
-        }
-        mMediaFeedNeedsToRun = true;
-    }
-
     public ArrayList<MediaSet> getMediaSets() {
         feedLog();
         return mMediaSets;
@@ -123,18 +103,12 @@ public final class MediaFeed implements Runnable {
         return null;
     }
 
-    public MediaSet getFilteredSet() {
-        feedLog();
-        return mMediaFilteredSet;
-    }
-
     public MediaSet addMediaSet(final long setId, DataSource dataSource) {
         feedLog();
         MediaSet mediaSet = new MediaSet(dataSource);
         mediaSet.mId = setId;
         mMediaSets.add(mediaSet);
         if (mDataSourceThread != null && !mDataSourceThread.isAlive()) {
-            LogUtils.printStackTrace("addMediaSet");
             mDataSourceThread.start();
         }
         mMediaFeedNeedsToRun = true;
@@ -185,60 +159,6 @@ public final class MediaFeed implements Runnable {
         mMediaFeedNeedsToRun = true;
     }
 
-    public void performOperation(final int operation, final ArrayList<MediaBucket> mediaBuckets, final Object data) {
-        feedLog();
-        int numBuckets = mediaBuckets.size();
-        final ArrayList<MediaBucket> copyMediaBuckets = new ArrayList<MediaBucket>(numBuckets);
-        for (int i = 0; i < numBuckets; ++i) {
-            copyMediaBuckets.add(mediaBuckets.get(i));
-        }
-        if (operation == OPERATION_DELETE && mListener != null) {
-            mListener.onFeedAboutToChange(this);
-        }
-        Thread operationThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ArrayList<MediaBucket> mediaBuckets = copyMediaBuckets;
-                if (operation == OPERATION_DELETE) {
-                    int numBuckets = mediaBuckets.size();
-                    for (int i = 0; i < numBuckets; ++i) {
-                        MediaBucket bucket = mediaBuckets.get(i);
-                        MediaSet set = bucket.mediaSet;
-                        ArrayList<MediaItem> items = bucket.mediaItems;
-                        if (set != null && items == null) {
-                            // Remove the entire bucket.
-                            removeMediaSet(set);
-                        } else if (set != null && items != null) {
-                            // We need to remove these items from the set.
-                            int numItems = items.size();
-                            // We also need to delete the items from the
-                            // cluster.
-                            MediaClustering clustering = mClusterSets.get(set);
-                            for (int j = 0; j < numItems; ++j) {
-                                MediaItem item = items.get(j);
-                                removeItemFromMediaSet(item, set);
-                                if (clustering != null) {
-                                    clustering.removeItemFromClustering(item);
-                                }
-                            }
-                            set.updateNumExpectedItems();
-                            set.generateTitle(true);
-                        }
-                    }
-                    updateListener(true);
-                    mMediaFeedNeedsToRun = true;
-                    if (mDataSource != null) {
-                        mDataSource.performOperation(OPERATION_DELETE, mediaBuckets, null);
-                    }
-                } else {
-                    mDataSource.performOperation(operation, mediaBuckets, data);
-                }
-            }
-        });
-        operationThread.setName("Operation " + operation);
-        operationThread.start();
-    }
-
     public void removeMediaSet(MediaSet set) {
         feedLog();
         synchronized (mMediaSets) {
@@ -247,20 +167,7 @@ public final class MediaFeed implements Runnable {
         mMediaFeedNeedsToRun = true;
     }
 
-    private void removeItemFromMediaSet(MediaItem item, MediaSet mediaSet) {
-        feedLog();
-        mediaSet.removeItem(item);
-        synchronized (mClusterSets) {
-            MediaClustering clustering = mClusterSets.get(mediaSet);
-            if (clustering != null) {
-                clustering.removeItemFromClustering(item);
-            }
-        }
-        mMediaFeedNeedsToRun = true;
-    }
-
     public void updateListener(boolean needsLayout) {
-        feedLog();
         mListenerNeedsUpdate = true;
         mListenerNeedsLayout = needsLayout;
     }
@@ -271,21 +178,12 @@ public final class MediaFeed implements Runnable {
         ArrayList<MediaSet> mediaSets = mMediaSets;
         int mediaSetsSize = mediaSets.size();
 
-        if (mInClusteringMode == false) {
-            if (currentMediaSetIndex == Shared.INVALID || currentMediaSetIndex >= mediaSetsSize) {
-                return mediaSetsSize;
-            } else {
-                MediaSet setToUse = (mMediaFilteredSet == null) ? mediaSets.get(currentMediaSetIndex) : mMediaFilteredSet;
-                return setToUse.getNumExpectedItems();
-            }
-        } else if (currentMediaSetIndex != Shared.INVALID && currentMediaSetIndex < mediaSetsSize) {
-            MediaSet set = mediaSets.get(currentMediaSetIndex);
-            MediaClustering clustering = mClusterSets.get(set);
-            if (clustering != null) {
-                return clustering.getClustersForDisplay().size();
-            }
+        if (currentMediaSetIndex == Shared.INVALID || currentMediaSetIndex >= mediaSetsSize) {
+            return mediaSetsSize;
+        } else {
+            MediaSet setToUse = mediaSets.get(currentMediaSetIndex);
+            return setToUse.getNumExpectedItems();
         }
-        return 0;
     }
 
     public MediaSet getSetForSlot(int slotIndex) {
@@ -298,36 +196,22 @@ public final class MediaFeed implements Runnable {
         int mediaSetsSize = mediaSets.size();
         int currentMediaSetIndex = mExpandedMediaSetIndex;
 
-        if (mInClusteringMode == false) {
-            if (currentMediaSetIndex == Shared.INVALID || currentMediaSetIndex >= mediaSetsSize) {
-                if (slotIndex >= mediaSetsSize) {
-                    return null;
-                }
-                return mMediaSets.get(slotIndex);
-            }
-            if (mSingleWrapper.getNumItems() == 0) {
-                mSingleWrapper.addItem(null);
-            }
-            MediaSet setToUse = (mMediaFilteredSet == null) ? mMediaSets.get(currentMediaSetIndex) : mMediaFilteredSet;
-            ArrayList<MediaItem> items = setToUse.getItems();
-            if (slotIndex >= setToUse.getNumItems()) {
+        if (currentMediaSetIndex == Shared.INVALID || currentMediaSetIndex >= mediaSetsSize) {
+            if (slotIndex >= mediaSetsSize) {
                 return null;
             }
-            mSingleWrapper.getItems().set(0, items.get(slotIndex));
-            return mSingleWrapper;
-        } else if (currentMediaSetIndex != Shared.INVALID && currentMediaSetIndex < mediaSetsSize) {
-            MediaSet set = mediaSets.get(currentMediaSetIndex);
-            MediaClustering clustering = mClusterSets.get(set);
-            if (clustering != null) {
-                ArrayList<MediaClustering.Cluster> clusters = clustering.getClustersForDisplay();
-                if (clusters.size() > slotIndex) {
-                    MediaClustering.Cluster cluster = clusters.get(slotIndex);
-                    cluster.generateCaption(mContext);
-                    return cluster;
-                }
-            }
+            return mMediaSets.get(slotIndex);
         }
-        return null;
+        if (mSingleWrapper.getNumItems() == 0) {
+            mSingleWrapper.addItem(null);
+        }
+        MediaSet setToUse = mMediaSets.get(currentMediaSetIndex);
+        ArrayList<MediaItem> items = setToUse.getItems();
+        if (slotIndex >= setToUse.getNumItems()) {
+            return null;
+        }
+        mSingleWrapper.getItems().set(0, items.get(slotIndex));
+        return mSingleWrapper;
     }
 
     public boolean isLoading() {
@@ -423,6 +307,8 @@ public final class MediaFeed implements Runnable {
                     if (expandedSetIndex >= mMediaSets.size()) {
                         expandedSetIndex = Shared.INVALID;
                     }
+
+                    // 从这里看得，看一看是怎么个回事
                     if (expandedSetIndex == Shared.INVALID) {
                         // We purge the sets outside this visibleRange.
                         int numSets = mediaSets.size();
@@ -516,17 +402,6 @@ public final class MediaFeed implements Runnable {
                         int numItemsLoaded = mediaSets.get(expandedSetIndex).mNumItemsLoaded;
                         int requestedItems = mVisibleRange.end;
                         // requestedItems count changes in clustering mode.
-                        if (mInClusteringMode && mClusterSets != null) {
-                            requestedItems = 0;
-                            MediaClustering clustering = mClusterSets.get(mediaSets.get(expandedSetIndex));
-                            if (clustering != null) {
-                                ArrayList<Cluster> clusters = clustering.getClustersForDisplay();
-                                int numClusters = clusters.size();
-                                for (int i = 0; i < numClusters; i++) {
-                                    requestedItems += clusters.get(i).getNumExpectedItems();
-                                }
-                            }
-                        }
                         MediaSet set = mediaSets.get(expandedSetIndex);
                         if (numItemsLoaded < set.getNumExpectedItems()) {
                             // We perform calculations for a window that gets
@@ -551,33 +426,12 @@ public final class MediaFeed implements Runnable {
                             }
                         }
                     }
-                    MediaFilter filter = mMediaFilter;
-                    if (filter != null && mMediaFilteredSet == null) {
-                        if (expandedSetIndex != Shared.INVALID) {
-                            MediaSet set = mediaSets.get(expandedSetIndex);
-                            ArrayList<MediaItem> items = set.getItems();
-                            int numItems = set.getNumItems();
-                            MediaSet filteredSet = new MediaSet();
-                            filteredSet.setNumExpectedItems(numItems);
-                            mMediaFilteredSet = filteredSet;
-                            for (int i = 0; i < numItems; ++i) {
-                                MediaItem item = items.get(i);
-                                if (filter.pass(item)) {
-                                    filteredSet.addItem(item);
-                                }
-                            }
-                            filteredSet.updateNumExpectedItems();
-                            filteredSet.generateTitle(true);
-                        }
-                        updateListener(true);
-                    }
                 }
             }
         }
     }
 
     public void expandMediaSet(int mediaSetIndex) {
-        LogUtils.printStackTrace(mediaSetIndex+"");
         feedLog();
         // We need to check if this slot can be focused or not.
         if (mListener != null) {
@@ -618,35 +472,6 @@ public final class MediaFeed implements Runnable {
         return (mExpandedMediaSetIndex != Shared.INVALID);
     }
 
-    public boolean restorePreviousClusteringState() {
-        feedLog();
-        boolean retVal = disableClusteringIfNecessary();
-        if (retVal) {
-            if (mListener != null) {
-                mListener.onFeedAboutToChange(this);
-            }
-            updateListener(true);
-            mMediaFeedNeedsToRun = true;
-        }
-        return retVal;
-    }
-
-    private boolean disableClusteringIfNecessary() {
-        feedLog();
-        if (mInClusteringMode) {
-            // Disable clustering.
-            mInClusteringMode = false;
-            mMediaFeedNeedsToRun = true;
-            return true;
-        }
-        return false;
-    }
-
-    public boolean isClustered() {
-        feedLog();
-        return mInClusteringMode;
-    }
-
     public MediaSet getCurrentSet() {
         feedLog();
         if (mExpandedMediaSetIndex != Shared.INVALID && mExpandedMediaSetIndex < mMediaSets.size()) {
@@ -655,30 +480,6 @@ public final class MediaFeed implements Runnable {
         return null;
     }
 
-    public void performClustering() {
-        feedLog();
-        if (mListener != null) {
-            mListener.onFeedAboutToChange(this);
-        }
-        MediaSet setToUse = null;
-        if (mExpandedMediaSetIndex != Shared.INVALID && mExpandedMediaSetIndex < mMediaSets.size()) {
-            setToUse = mMediaSets.get(mExpandedMediaSetIndex);
-        }
-        if (setToUse != null) {
-            MediaClustering clustering = null;
-            synchronized (mClusterSets) {
-                // Make sure the computation is completed to the end.
-                clustering = mClusterSets.get(setToUse);
-                if (clustering != null) {
-                    clustering.compute(null, true);
-                } else {
-                    return;
-                }
-            }
-            mInClusteringMode = true;
-            updateListener(true);
-        }
-    }
 
     public void moveSetToFront(MediaSet mediaSet) {
         feedLog();
@@ -743,5 +544,10 @@ public final class MediaFeed implements Runnable {
 
     private static void feedLog() {
         LogUtils.footPrint();
+    }
+
+    private static void feedLog2() {
+        final String TAG = "ertewu2";
+        LogUtils.footPrint(TAG);
     }
 }

@@ -53,7 +53,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.cooliris.app.App;
-import com.cooliris.app.LogUtils;
 import com.cooliris.app.Res;
 import com.cooliris.media.DataSource;
 import com.cooliris.media.DiskCache;
@@ -895,7 +894,6 @@ public final class CacheService extends IntentService {
      * 是否dirty的动作？ 也就是是否初始化一个新的bucketId?
      */
     public static final long[] computeDirtySets(final Context context) {
-        LogUtils.printStackTrace("computeDirtySets");
         cacheLog();
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
         final ContentResolver cr = context.getContentResolver();

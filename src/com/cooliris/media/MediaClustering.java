@@ -18,14 +18,6 @@ package com.cooliris.media;
 
 import java.util.ArrayList;
 
-import android.content.Context;
-import android.content.res.Resources;
-import android.text.format.DateFormat;
-import android.text.format.DateUtils;
-
-import com.cooliris.app.App;
-import com.cooliris.app.Res;
-
 /**
  * Implementation of an agglomerative based clustering where all items within a
  * certain time cutoff are grouped into the same cluster. Small adjacent
@@ -116,23 +108,7 @@ public final class MediaClustering {
         compute(mediaItem, false);
     }
 
-    public void removeItemFromClustering(MediaItem mediaItem) {
-        // Find the cluster that contains this item.
-        if (mCurrCluster.removeItem(mediaItem)) {
-            return;
-        }
-        int numClusters = mClusters.size();
-        for (int i = 0; i < numClusters; i++) {
-            Cluster cluster = mClusters.get(i);
-            if (cluster.removeItem(mediaItem)) {
-                if (cluster.mNumItemsLoaded == 0) {
-                    mClusters.remove(cluster);
-                }
-                return;
-            }
-        }
-    }
-
+    //看样子，这个函数是这个类的核心操作函数,我只是觉得它很长..
     public void compute(MediaItem currentItem, boolean processAllItems) {
         if (currentItem != null) {
             int numClusters = mClusters.size();
@@ -274,94 +250,11 @@ public final class MediaClustering {
         return mClusters;
     }
 
+    //这个类被我给删成这么点了..
     public static final class Cluster extends MediaSet {
         private boolean mGeographicallySeparatedFromPrevCluster = false;
-        private boolean mClusterChanged = false;
-        private boolean mIsPicassaAlbum = false;
-        private static final String MMDDYY_FORMAT = "MMddyy";
 
-        public Cluster() {
-
-        }
-
-        public void generateCaption(Context context) {
-            if (mClusterChanged) {
-                Resources resources = context.getResources();
-
-                long minTimestamp = -1L;
-                long maxTimestamp = -1L;
-                if (areTimestampsAvailable()) {
-                    minTimestamp = mMinTimestamp;
-                    maxTimestamp = mMaxTimestamp;
-                } else if (areAddedTimestampsAvailable()) {
-                    minTimestamp = mMinAddedTimestamp;
-                    maxTimestamp = mMaxAddedTimestamp;
-                }
-
-                if (minTimestamp != -1L) {
-                    if (mIsPicassaAlbum) {
-                        minTimestamp -= App.CURRENT_TIME_ZONE.getOffset(minTimestamp);
-                        maxTimestamp -= App.CURRENT_TIME_ZONE.getOffset(maxTimestamp);
-                    }
-                    String minDay = DateFormat.format(MMDDYY_FORMAT, minTimestamp).toString();
-                    String maxDay = DateFormat.format(MMDDYY_FORMAT, maxTimestamp).toString();
-
-                    if (minDay.substring(4).equals(maxDay.substring(4))) {
-                        // The items are from the same year - show at least as
-                        // much granularity as abbrev_all allows.
-                        mName = DateUtils.formatDateRange(context, minTimestamp, maxTimestamp, DateUtils.FORMAT_ABBREV_ALL);
-
-                        // Get a more granular date range string if the min and
-                        // max timestamp are on the same day and from the
-                        // current year.
-                        if (minDay.equals(maxDay)) {
-                            int flags = DateUtils.FORMAT_ABBREV_MONTH | DateUtils.FORMAT_SHOW_DATE;
-                            // Contains the year only if the date does not
-                            // correspond to the current year.
-                            String dateRangeWithOptionalYear = DateUtils.formatDateTime(context, minTimestamp, flags);
-                            String dateRangeWithYear = DateUtils.formatDateTime(context, minTimestamp, flags
-                                    | DateUtils.FORMAT_SHOW_YEAR);
-                            if (!dateRangeWithOptionalYear.equals(dateRangeWithYear)) {
-                                // This means both dates are from the same year
-                                // - show the time.
-                                // Not enough room to display the time range.
-                                // Pick the mid-point.
-                                long midTimestamp = (minTimestamp + maxTimestamp) / 2;
-                                mName = DateUtils.formatDateRange(context, midTimestamp, midTimestamp, DateUtils.FORMAT_SHOW_TIME
-                                        | flags);
-                            }
-                        }
-                    } else {
-                        // The items are not from the same year - only show
-                        // month and year.
-                        int flags = DateUtils.FORMAT_NO_MONTH_DAY | DateUtils.FORMAT_ABBREV_MONTH | DateUtils.FORMAT_SHOW_DATE;
-                        mName = DateUtils.formatDateRange(context, minTimestamp, maxTimestamp, flags);
-                    }
-                } else {
-                    mName = resources.getString(Res.string.date_unknown);
-                }
-                updateNumExpectedItems();
-                generateTitle(false);
-                mClusterChanged = false;
-            }
-        }
-
-        @Override
-        public void addItem(MediaItem item) {
-            super.addItem(item);
-            mClusterChanged = true;
-        }
-
-        @Override
-        public boolean removeItem(MediaItem item) {
-            if (super.removeItem(item)) {
-                mClusterChanged = true;
-                return true;
-            }
-            return false;
-        }
-
-        public MediaItem getLastItem() {
+        public  MediaItem getLastItem() {
             final ArrayList<MediaItem> items = super.getItems();
             if (items == null || mNumItemsLoaded == 0) {
                 return null;
@@ -372,7 +265,7 @@ public final class MediaClustering {
     }
 
     // Returns the time interval between the two items in milliseconds.
-    public static long timeDistance(MediaItem a, MediaItem b) {
+    private static long timeDistance(MediaItem a, MediaItem b) {
         if (a == null || b == null) {
             return 0;
         }
