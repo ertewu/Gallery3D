@@ -32,8 +32,7 @@ public class LogUtils {
                 + "|RowIndex:" + rowIndex + "\n";
 
         msgToPrint = msgToPrint + "\n";
-//        log(msgToPrint);
-        Log.i("ertewu2", msgToPrint);
+        log(msgToPrint);
     }
 
     /**
@@ -57,7 +56,8 @@ public class LogUtils {
         msgToPrint = msgToPrint + "\n";
         msgToPrint = msgToPrint + appendMsg + "\n";
         msgToPrint = msgToPrint + "--------------printMethodInfo end----------------";
-        Log.i("ertewu", msgToPrint);
+//        log(msgToPrint);
+        Log.i("ertewu2", msgToPrint);
     }
 
     public static void printStackTrace(String appendMsg) {
@@ -83,6 +83,7 @@ public class LogUtils {
             builder.append(appendMsg + "\n");
             builder.append("--------------printStackTrace end----------------");
             log(builder.toString());
+            Log.i("ertewu2", builder.toString());
         }
     }
 

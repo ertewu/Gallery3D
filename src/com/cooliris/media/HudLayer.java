@@ -311,14 +311,15 @@ public final class HudLayer extends Layer {
                         .getDrawable(Res.drawable.ic_menu_rotate_left), new Runnable() {
                     @Override
                     public void run() {
-                        mGridLayer.rotateSelectedItems(-90.0f);
+                        //split这个版本里，rotateSelectedItems已经删除去了，没办法MediaFeed太乱了，我完全没法看..
+//                        mGridLayer.rotateSelectedItems(-90.0f);
                     }
                 }),
                 new PopupMenu.Option(mContext.getResources().getString(Res.string.rotate_right), mContext.getResources()
                         .getDrawable(Res.drawable.ic_menu_rotate_right), new Runnable() {
                     @Override
                     public void run() {
-                        mGridLayer.rotateSelectedItems(90.0f);
+//                        mGridLayer.rotateSelectedItems(90.0f);
                     }
                 }), };
 

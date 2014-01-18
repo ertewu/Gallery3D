@@ -15,8 +15,6 @@ import com.cooliris.media.MediaClustering.Cluster;
 public final class MediaFeed implements Runnable {
     private final String TAG = "MediaFeed";
     public static final int OPERATION_DELETE = 0;
-    public static final int OPERATION_ROTATE = 1;
-    public static final int OPERATION_CROP = 2;
 
     private static final int NUM_ITEMS_LOOKAHEAD = 60;
     private IndexRange mVisibleRange = new IndexRange();
@@ -30,6 +28,11 @@ public final class MediaFeed implements Runnable {
     private boolean mInClusteringMode = false;
     // 这个是干什么的，不太懂的..
     private HashMap<MediaSet, MediaClustering> mClusterSets = new HashMap<MediaSet, MediaClustering>(32);
+
+    /**
+     * 这个东西是当点击一个MediaSet进入照片平铺页时，当前点击的那个MediaSet的index <br>
+     * 这个index就是当前MediaSet在MediaSets中的索引
+     * */
     private int mExpandedMediaSetIndex = Shared.INVALID;
     private MediaFilter mMediaFilter;
     private MediaSet mMediaFilteredSet;
@@ -42,7 +45,6 @@ public final class MediaFeed implements Runnable {
 
     private String mUri = Images.Media.EXTERNAL_CONTENT_URI.toString();
     String[] mUriArray = new String[] { mUri };
-    private volatile boolean mIsShutdown = false;
 
     /**
      * GridLayer实现了这个接口，这个接口看样子是很有用的，却没有注释..GridLayer里边的onFeedChanged实现了超级多的东西
@@ -286,12 +288,6 @@ public final class MediaFeed implements Runnable {
         return 0;
     }
 
-    public void copySlotStateFrom(MediaFeed another) {
-        feedLog();
-        mExpandedMediaSetIndex = another.mExpandedMediaSetIndex;
-        mInClusteringMode = another.mInClusteringMode;
-    }
-
     public MediaSet getSetForSlot(int slotIndex) {
         feedLog();
         if (slotIndex < 0) {
@@ -345,7 +341,6 @@ public final class MediaFeed implements Runnable {
         // this是指runnable
         mDataSourceThread = new Thread(this);
         mDataSourceThread.setName("MediaFeed");
-        mIsShutdown = false;
         // 整个mAlbumSourceThread就只是loadMediaSets 这个函数
         mAlbumSourceThread = new Thread(new Runnable() {
             @Override
@@ -377,25 +372,24 @@ public final class MediaFeed implements Runnable {
         updateListener(false);
     }
 
+    // 这是一个超级垃圾的函数，非常难理解
     @Override
     public void run() {
         feedLog();
-        DataSource dataSource = mDataSource;
         int sleepMs = 10;
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-        if (dataSource != null) {
-            //没想到这个线程是一直开着的？ 为什么要这么一直刷..
-            while (!Thread.interrupted() && !mIsShutdown) {
-                String[] databaseUris = mUriArray;
+        if (mDataSource != null) {
+            // 没想到这个显示是一直刷的，只要开着程序，大概几百毫秒刷一次，这个太贱了..
+            while (!Thread.interrupted()) {
                 boolean performRefresh = false;
                 boolean settingFeedAboutToChange = false;
                 if (performRefresh) {
-                    if (dataSource != null) {
+                    if (mDataSource != null) {
                         if (mListener != null) {
                             settingFeedAboutToChange = true;
                             mListener.onFeedAboutToChange(this);
                         }
-                        dataSource.refresh(this, databaseUris);
+                        mDataSource.refresh(this, mUriArray);
                         mMediaFeedNeedsToRun = true;
                     }
                 }
@@ -441,7 +435,7 @@ public final class MediaFeed implements Runnable {
                                 int numItemsLoaded = set.mNumItemsLoaded;
                                 if (numItemsLoaded < set.getNumExpectedItems() && numItemsLoaded < 8) {
                                     synchronized (set) {
-                                        dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
+                                        mDataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
                                         set.checkForDeletedItems();
                                     }
                                     if (set.getNumExpectedItems() == 0) {
@@ -475,7 +469,7 @@ public final class MediaFeed implements Runnable {
                                     int numItemsLoaded = set.mNumItemsLoaded;
                                     if (numItemsLoaded < set.getNumExpectedItems() && numItemsLoaded < 8) {
                                         synchronized (set) {
-                                            dataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
+                                            mDataSource.loadItemsForSet(this, set, numItemsLoaded, 8);
                                             set.checkForDeletedItems();
                                         }
                                         if (set.getNumExpectedItems() == 0) {
@@ -540,7 +534,7 @@ public final class MediaFeed implements Runnable {
                             // The start of the window is 0, x, 2x, 3x ... etc
                             // where x = NUM_ITEMS_LOOKAHEAD.
                             synchronized (set) {
-                                dataSource.loadItemsForSet(this, set, numItemsLoaded, (requestedItems / NUM_ITEMS_LOOKAHEAD)
+                                mDataSource.loadItemsForSet(this, set, numItemsLoaded, (requestedItems / NUM_ITEMS_LOOKAHEAD)
                                         * NUM_ITEMS_LOOKAHEAD + NUM_ITEMS_LOOKAHEAD);
                                 set.checkForDeletedItems();
                             }
@@ -583,6 +577,7 @@ public final class MediaFeed implements Runnable {
     }
 
     public void expandMediaSet(int mediaSetIndex) {
+        LogUtils.printStackTrace(mediaSetIndex+"");
         feedLog();
         // We need to check if this slot can be focused or not.
         if (mListener != null) {
@@ -747,6 +742,6 @@ public final class MediaFeed implements Runnable {
     }
 
     private static void feedLog() {
-        // LogUtils.footPrint();
+        LogUtils.footPrint();
     }
 }

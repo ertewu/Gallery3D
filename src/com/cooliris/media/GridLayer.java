@@ -432,7 +432,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         //显然是把老的MediaFeed听到了， 然后又初始化了新的MediaFeed
         mMediaFeed = new MediaFeed(mContext, dataSource, this);
         if (olderFeed != null) {
-            mMediaFeed.copySlotStateFrom(olderFeed);
             mDisplayList.clear();
             getBackgroundLayer().clear();
         }
@@ -1367,34 +1366,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
         centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
     }
 
-    public void rotateSelectedItems(float f) {
-        MediaBucketList bucketList = mSelectedBucketList;
-        ArrayList<MediaBucket> mediaBuckets = bucketList.get();
-        DisplayList displayList = mDisplayList;
-        int numBuckets = mediaBuckets.size();
-        for (int i = 0; i < numBuckets; ++i) {
-            MediaBucket bucket = mediaBuckets.get(i);
-            ArrayList<MediaItem> mediaItems = bucket.mediaItems;
-            if (mediaItems != null) {
-                int numMediaItems = mediaItems.size();
-                for (int j = 0; j < numMediaItems; ++j) {
-                    MediaItem item = mediaItems.get(j);
-                    DisplayItem displayItem = displayList.get(item);
-                    displayItem.rotateImageBy(f);
-                    displayList.addToAnimatables(displayItem);
-                }
-            }
-        }
-        if (mState == STATE_FULL_SCREEN) {
-            centerCameraForSlot(mInputProcessor.getCurrentSelectedSlot(), 1.0f);
-        }
-        mMediaFeed.performOperation(MediaFeed.OPERATION_ROTATE, mediaBuckets, new Float(f));
-        // we recreate these displayitems from the cache
-    }
-
-    public void cropSelectedItem() {
-
-    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -1465,33 +1436,6 @@ public final class GridLayer extends RootLayer implements MediaFeed.Listener, Ti
 
     public boolean getPickIntent() {
         return mPickIntent;
-    }
-
-    public void setViewIntent(boolean b, final String setName) {
-        mViewIntent = b;
-        if (b) {
-            mMediaFeed.expandMediaSet(0);
-            setState(STATE_GRID_VIEW);
-            // We need to make sure we haven't pushed the same label twice
-            if (mHud.getPathBar().getNumLevels() == 1) {
-                mHud.getPathBar().pushLabel(Res.drawable.icon_folder_small, setName, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mFeedAboutToChange) {
-                            return;
-                        }
-                        if (mHud.getAlpha() == 1.0f) {
-                            disableLocationFiltering();
-                            if (mInputProcessor != null)
-                                mInputProcessor.clearSelection();
-                            setState(STATE_GRID_VIEW);
-                        } else {
-                            mHud.setAlpha(1.0f);
-                        }
-                    }
-                });
-            }
-        }
     }
 
     public boolean getViewIntent() {

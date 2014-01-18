@@ -220,11 +220,9 @@ public final class CacheService extends IntentService {
             final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
             try {
                 final int numAlbums = dis.readInt();
-                LogUtils.log("CacheService loadMediaSets numAlbums:" + numAlbums);
                 for (int i = 0; i < numAlbums; ++i) {
                     final long setId = dis.readLong();
                     final String name = Utils.readUTF(dis);
-                    LogUtils.log("CacheSercie r251 loop " + i + ":" + setId + "|" + name);
                     final boolean hasImages = dis.readBoolean();
                     // 从这里开始，其实是把从mAlbumCache读进来的cache给了MediaFeed,从而MediaFeed得到了sdcard这个MediaSet
                     MediaSet mediaSet = feed.getMediaSet(setId);
