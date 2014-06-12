@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2007 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.cooliris.media;
 
 import android.graphics.Canvas;
@@ -32,7 +16,7 @@ import com.cooliris.app.Res;
 // overlayed with the image. There are two coordinate spaces in use. One is
 // image, another is screen. computeLayout() uses mMatrix to map from image
 // space to screen space.
-class HighlightView {
+public class HighlightView {
 
     @SuppressWarnings("unused")
     private static final String TAG = "HighlightView";
@@ -56,7 +40,7 @@ class HighlightView {
         mResizeDrawableDiagonal = resources.getDrawable(Res.drawable.indicator_autocrop);
     }
 
-    boolean mIsFocused;
+    public boolean mIsFocused;
     boolean mHidden;
 
     public boolean hasFocus() {
@@ -71,7 +55,7 @@ class HighlightView {
         mHidden = hidden;
     }
 
-    protected void draw(Canvas canvas) {
+    public void draw(Canvas canvas) {
         if (mHidden) {
             return;
         }
@@ -211,7 +195,7 @@ class HighlightView {
 
     // Handles motion (dx, dy) in screen space.
     // The "edge" parameter specifies which edges the user is dragging.
-    void handleMotion(int edge, float dx, float dy) {
+    public void handleMotion(int edge, float dx, float dy) {
         Rect r = computeLayout();
         if (edge == GROW_NONE) {
             return;
@@ -349,16 +333,16 @@ class HighlightView {
         init();
     }
 
-    enum ModifyMode {
+    public enum ModifyMode {
         None, Move, Grow
     }
 
     private ModifyMode mMode = ModifyMode.None;
 
-    Rect mDrawRect; // in screen space
+    public Rect mDrawRect; // in screen space
     private RectF mImageRect; // in image space
-    RectF mCropRect; // in image space
-    Matrix mMatrix;
+    public RectF mCropRect; // in image space
+    public Matrix mMatrix;
 
     private boolean mMaintainAspectRatio = false;
     private float mInitialAspectRatio;

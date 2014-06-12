@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2009 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.cooliris.media;
 
 import java.util.HashMap;
@@ -22,6 +6,11 @@ import javax.microedition.khronos.opengles.GL11;
 
 import com.cooliris.app.App;
 import com.cooliris.app.Res;
+import com.cooliris.datasource.LocalDataSource;
+import com.cooliris.math.Shared;
+import com.cooliris.media.a_media.MediaSet;
+import com.cooliris.media.texture.StringTexture;
+import com.cooliris.media.texture.Texture;
 
 public final class GridDrawables {
     // The display primitives.
@@ -82,7 +71,7 @@ public final class GridDrawables {
     public GridDrawables(final int itemWidth, final int itemHeight) {
         if (sGrid == null) {
             final float height = 1.0f;
-            final float width = (float) (height * itemWidth) / (float) itemHeight;
+            final float width = height * itemWidth / itemHeight;
             final float aspectRatio = (float) itemWidth / (float) itemHeight;
             final float oneByAspect = 1.0f / aspectRatio;
 
@@ -112,9 +101,9 @@ public final class GridDrawables {
 
             // We create the quad for the text label.
             float seedTextWidth = (App.PIXEL_DENSITY < 1.5f) ? 128.0f : 256.0f;
-            float textWidth = (seedTextWidth / (float) itemWidth) * width;
+            float textWidth = (seedTextWidth / itemWidth) * width;
             float textHeightPow2 = (App.PIXEL_DENSITY < 1.5f) ? 32.0f : 64.0f;
-            float textHeight = (textHeightPow2 / (float) itemHeight) * height;
+            float textHeight = (textHeightPow2 / itemHeight) * height;
             float textOffsetY = 0.0f;
             sTextGrid = GridQuad.createGridQuad(textWidth, textHeight, 0, textOffsetY, 1.0f, 1.0f, false);
 

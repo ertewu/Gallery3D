@@ -33,6 +33,11 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Process;
 
+import com.cooliris.cache.obj.DiskCache;
+import com.cooliris.media.a_media.MediaSet;
+import com.cooliris.media.collection.Deque;
+import com.cooliris.media.utils.Utils;
+
 public final class ReverseGeocoder extends Thread {
     private static final int MAX_COUNTRY_NAME_LENGTH = 8;
     // If two points are within 20 miles of each other, use
@@ -306,7 +311,7 @@ public final class ReverseGeocoder extends Thread {
         return locality;
     }
 
-    protected String getReverseGeocodedLocation(final double latitude, final double longitude, final int desiredNumDetails) {
+    public String getReverseGeocodedLocation(final double latitude, final double longitude, final int desiredNumDetails) {
         String location = null;
         int numDetails = 0;
         try {

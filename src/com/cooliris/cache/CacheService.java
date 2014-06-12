@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2009 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.cooliris.cache;
 
 import java.io.BufferedInputStream;
@@ -26,10 +10,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,11 +25,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Process;
-import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Video;
@@ -56,111 +36,43 @@ import android.widget.Toast;
 
 import com.cooliris.app.App;
 import com.cooliris.app.Res;
-import com.cooliris.media.DataSource;
-import com.cooliris.media.DiskCache;
-import com.cooliris.media.Gallery;
-import com.cooliris.media.LocalDataSource;
-import com.cooliris.media.LongSparseArray;
-import com.cooliris.media.MediaFeed;
-import com.cooliris.media.MediaItem;
-import com.cooliris.media.MediaSet;
-import com.cooliris.media.Shared;
+import com.cooliris.cache.obj.DiskCache;
+import com.cooliris.cache.obj.ImageList;
+import com.cooliris.datasource.DataSource;
+import com.cooliris.datasource.LocalDataSource;
+import com.cooliris.math.Shared;
 import com.cooliris.media.SortCursor;
-import com.cooliris.media.Utils;
+import com.cooliris.media.a_media.MediaFeed;
+import com.cooliris.media.a_media.MediaItem;
+import com.cooliris.media.a_media.MediaSet;
+import com.cooliris.media.collection.LongSparseArray;
+import com.cooliris.media.component.Gallery;
+import com.cooliris.media.utils.Utils;
 
 public final class CacheService extends IntentService {
+
+    public static final String TAG = "CacheService";
+    private static final boolean DEBUG = true;
+
     public static final String ACTION_CACHE = "com.cooliris.cache.action.CACHE";
     public static final DiskCache sAlbumCache = new DiskCache("local-album-cache");
     public static final DiskCache sMetaAlbumCache = new DiskCache("local-meta-cache");
     public static final DiskCache sSkipThumbnailIds = new DiskCache("local-skip-cache");
 
-    private static final String TAG = "CacheService";
-    private static ImageList sList = null;
-    private static final boolean DEBUG = true;
-
-    // Wait 2 seconds to start the thumbnailer so that the application can load
-    // without any overheads.
-    private static final int THUMBNAILER_WAIT_IN_MS = 2000;
-    private static final int DEFAULT_THUMBNAIL_WIDTH = 128;
-    private static final int DEFAULT_THUMBNAIL_HEIGHT = 96;
-
-    public static final String DEFAULT_IMAGE_SORT_ORDER = Images.ImageColumns.DATE_TAKEN + " ASC";
-    public static final String DEFAULT_VIDEO_SORT_ORDER = Video.VideoColumns.DATE_TAKEN + " ASC";
-    public static final String DEFAULT_BUCKET_SORT_ORDER = "upper(" + Images.ImageColumns.BUCKET_DISPLAY_NAME + ") ASC";
-
-    // Must preserve order between these indices and the order of the terms in
-    // BUCKET_PROJECTION_IMAGES, BUCKET_PROJECTION_VIDEOS.
-    // Not using SortedHashMap for efficieny reasons.
-    public static final int BUCKET_ID_INDEX = 0;
-    public static final int BUCKET_NAME_INDEX = 1;
-    public static final String[] BUCKET_PROJECTION_IMAGES = new String[] { Images.ImageColumns.BUCKET_ID,
-            Images.ImageColumns.BUCKET_DISPLAY_NAME };
-
-    public static final String[] BUCKET_PROJECTION_VIDEOS = new String[] { Video.VideoColumns.BUCKET_ID,
-            Video.VideoColumns.BUCKET_DISPLAY_NAME };
-
-    // Must preserve order between these indices and the order of the terms in
-    // THUMBNAIL_PROJECTION.
-    public static final int THUMBNAIL_ID_INDEX = 0;
-    public static final int THUMBNAIL_DATE_MODIFIED_INDEX = 1;
-    public static final int THUMBNAIL_DATA_INDEX = 2;
-    public static final int THUMBNAIL_ORIENTATION_INDEX = 3;
-    public static final String[] THUMBNAIL_PROJECTION = new String[] { Images.ImageColumns._ID, Images.ImageColumns.DATE_ADDED,
-            Images.ImageColumns.DATA, Images.ImageColumns.ORIENTATION };
-
-    public static final String[] SENSE_PROJECTION = new String[] { Images.ImageColumns.BUCKET_ID,
-            "MAX(" + Images.ImageColumns.DATE_ADDED + "), COUNT(*)" };
-
-    // Must preserve order between these indices and the order of the terms in
-    // INITIAL_PROJECTION_IMAGES and
-    // INITIAL_PROJECTION_VIDEOS.
-    public static final int MEDIA_ID_INDEX = 0;
-    public static final int MEDIA_CAPTION_INDEX = 1;
-    public static final int MEDIA_MIME_TYPE_INDEX = 2;
-    public static final int MEDIA_LATITUDE_INDEX = 3;
-    public static final int MEDIA_LONGITUDE_INDEX = 4;
-    public static final int MEDIA_DATE_TAKEN_INDEX = 5;
-    public static final int MEDIA_DATE_ADDED_INDEX = 6;
-    public static final int MEDIA_DATE_MODIFIED_INDEX = 7;
-    public static final int MEDIA_DATA_INDEX = 8;
-    public static final int MEDIA_ORIENTATION_OR_DURATION_INDEX = 9;
-    public static final int MEDIA_BUCKET_ID_INDEX = 10;
-    public static final String[] PROJECTION_IMAGES = new String[] { Images.ImageColumns._ID, Images.ImageColumns.TITLE,
-            Images.ImageColumns.MIME_TYPE, Images.ImageColumns.LATITUDE, Images.ImageColumns.LONGITUDE,
-            Images.ImageColumns.DATE_TAKEN, Images.ImageColumns.DATE_ADDED, Images.ImageColumns.DATE_MODIFIED,
-            Images.ImageColumns.DATA, Images.ImageColumns.ORIENTATION, Images.ImageColumns.BUCKET_ID };
-
-    public static final String[] PROJECTION_VIDEOS = new String[] { Video.VideoColumns._ID, Video.VideoColumns.TITLE,
-            Video.VideoColumns.MIME_TYPE, Video.VideoColumns.LATITUDE, Video.VideoColumns.LONGITUDE, Video.VideoColumns.DATE_TAKEN,
-            Video.VideoColumns.DATE_ADDED, Video.VideoColumns.DATE_MODIFIED, Video.VideoColumns.DATA, Video.VideoColumns.DURATION,
-            Video.VideoColumns.BUCKET_ID };
-
-    public static final String BASE_CONTENT_STRING_IMAGES = (Images.Media.EXTERNAL_CONTENT_URI).toString() + "/";
-    public static final String BASE_CONTENT_STRING_VIDEOS = (Video.Media.EXTERNAL_CONTENT_URI).toString() + "/";
-    private static final AtomicReference<Thread> THUMBNAIL_THREAD = new AtomicReference<Thread>();
-
-    // Special indices in the Albumcache.
-    private static final int ALBUM_CACHE_METADATA_INDEX = -1;
-    private static final int ALBUM_CACHE_DIRTY_INDEX = -2;
-    private static final int ALBUM_CACHE_DIRTY_BUCKET_INDEX = -4;
-    private static final int ALBUM_CACHE_LOCALE_INDEX = -5;
-
-    private static final DateFormat mDateFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-    private static final DateFormat mAltDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-    //dummy是假的，伪装的意思，伪装的意思更明显吧
+    static final DateFormat mDateFormat = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+    static final DateFormat mAltDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    // dummy是假的，伪装的意思，伪装的意思更明显吧
     private static final byte[] sDummyData = new byte[] { 1 };
     private static final Object sCacheLock = new Object();
-
-    public static final String getCachePath(final String subFolderName) {
-        return Environment.getExternalStorageDirectory() + "/Android/data/com.cooliris.media/cache/" + subFolderName;
-    }
+    static final AtomicReference<Thread> THUMBNAIL_THREAD = new AtomicReference<Thread>();
+    private static ImageList sList = null;
 
     public static final void startCache(final Context context, final boolean checkthumbnails) {
-        final Locale locale = getLocaleForAlbumCache();
+        final Locale locale = CacheHelper.getLocaleForAlbumCache();
         final Locale defaultLocale = Locale.getDefault();
         if (locale == null || !locale.equals(defaultLocale)) {
             sAlbumCache.deleteAll();
-            putLocaleForAlbumCache(defaultLocale);
+            CacheHelper.putLocaleForAlbumCache(defaultLocale);
         }
         final Intent intent = new Intent(ACTION_CACHE, null, context, CacheService.class);
         intent.putExtra("checkthumbnails", checkthumbnails);
@@ -169,10 +81,12 @@ public final class CacheService extends IntentService {
 
     public static final boolean isCacheReady(final boolean onlyMediaSets) {
         if (onlyMediaSets) {
-            return (sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0) != null && sAlbumCache.get(ALBUM_CACHE_DIRTY_INDEX, 0) == null);
+            return (sAlbumCache.get(CacheConstants.ALBUM_CACHE_METADATA_INDEX, 0) != null && sAlbumCache.get(
+                    CacheConstants.ALBUM_CACHE_DIRTY_INDEX, 0) == null);
         } else {
-            return (sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0) != null && sAlbumCache.get(ALBUM_CACHE_DIRTY_INDEX, 0) == null && sAlbumCache
-                    .get(ALBUM_CACHE_DIRTY_BUCKET_INDEX, 0) == null);
+            return (sAlbumCache.get(CacheConstants.ALBUM_CACHE_METADATA_INDEX, 0) != null
+                    && sAlbumCache.get(CacheConstants.ALBUM_CACHE_DIRTY_INDEX, 0) == null && sAlbumCache.get(
+                    CacheConstants.ALBUM_CACHE_DIRTY_BUCKET_INDEX, 0) == null);
         }
     }
 
@@ -183,7 +97,7 @@ public final class CacheService extends IntentService {
     public static final void markDirty() {
         sList = null;
         synchronized (sCacheLock) {
-            sAlbumCache.put(ALBUM_CACHE_DIRTY_INDEX, sDummyData, 0);
+            sAlbumCache.put(CacheConstants.ALBUM_CACHE_DIRTY_INDEX, sDummyData, 0);
         }
     }
 
@@ -194,7 +108,7 @@ public final class CacheService extends IntentService {
         sList = null;
         synchronized (sCacheLock) {
             byte[] data = longToByteArray(id);
-            final byte[] existingData = sAlbumCache.get(ALBUM_CACHE_DIRTY_BUCKET_INDEX, 0);
+            final byte[] existingData = sAlbumCache.get(CacheConstants.ALBUM_CACHE_DIRTY_BUCKET_INDEX, 0);
             if (existingData != null && existingData.length > 0) {
                 final long[] ids = toLongArray(existingData);
                 final int numIds = ids.length;
@@ -203,43 +117,21 @@ public final class CacheService extends IntentService {
                         return;
                     }
                 }
-                // Add this to the existing keys and concatenate the byte
-                // arrays.
+                // Add this to the existing keys and concatenate the byte arrays
                 data = concat(data, existingData);
             }
-            sAlbumCache.put(ALBUM_CACHE_DIRTY_BUCKET_INDEX, data, 0);
+            sAlbumCache.put(CacheConstants.ALBUM_CACHE_DIRTY_BUCKET_INDEX, data, 0);
         }
-    }
-
-    public static final boolean setHasItems(final ContentResolver cr, final long setId) {
-        final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
-        final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI;
-        final StringBuffer whereString = new StringBuffer(Images.ImageColumns.BUCKET_ID + "=" + setId);
-        try {
-            final Cursor cursorImages = cr.query(uriImages, BUCKET_PROJECTION_IMAGES, whereString.toString(), null, null);
-            if (cursorImages != null && cursorImages.getCount() > 0) {
-                cursorImages.close();
-                return true;
-            }
-            final Cursor cursorVideos = cr.query(uriVideos, BUCKET_PROJECTION_VIDEOS, whereString.toString(), null, null);
-            if (cursorVideos != null && cursorVideos.getCount() > 0) {
-                cursorVideos.close();
-                return true;
-            }
-        } catch (Exception e) {
-            // If the database query failed for any reason
-            ;
-        }
-        return false;
     }
 
     public static final void loadMediaSets(final Context context, final MediaFeed feed, final DataSource source,
             final boolean includeImages, final boolean includeVideos, final boolean moveCameraToFront) {
         // We check to see if the Cache is ready.
         syncCache(context);
-        final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
+        final byte[] albumData = sAlbumCache.get(CacheConstants.ALBUM_CACHE_METADATA_INDEX, 0);
         if (albumData != null && albumData.length > 0) {
-            final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
+            final DataInputStream dis = new DataInputStream(new BufferedInputStream(
+                    new ByteArrayInputStream(albumData), 256));
             try {
                 final int numAlbums = dis.readInt();
                 for (int i = 0; i < numAlbums; ++i) {
@@ -267,7 +159,7 @@ public final class CacheService extends IntentService {
             } catch (IOException e) {
                 Log.e(TAG, "Error loading albums.");
                 sAlbumCache.deleteAll();
-                putLocaleForAlbumCache(Locale.getDefault());
+                CacheHelper.putLocaleForAlbumCache(Locale.getDefault());
             }
         } else {
             if (DEBUG)
@@ -275,9 +167,10 @@ public final class CacheService extends IntentService {
         }
     }
 
-    public static final void loadMediaSet(final Context context, final MediaFeed feed, final DataSource source, final long bucketId) {
+    public static final void loadMediaSet(final Context context, final MediaFeed feed, final DataSource source,
+            final long bucketId) {
         syncCache(context);
-        final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
+        final byte[] albumData = sAlbumCache.get(CacheConstants.ALBUM_CACHE_METADATA_INDEX, 0);
         if (albumData != null && albumData.length > 0) {
             DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
             try {
@@ -303,7 +196,7 @@ public final class CacheService extends IntentService {
             } catch (IOException e) {
                 Log.e(TAG, "Error finding album " + bucketId);
                 sAlbumCache.deleteAll();
-                putLocaleForAlbumCache(Locale.getDefault());
+                CacheHelper.putLocaleForAlbumCache(Locale.getDefault());
             }
         } else {
             if (DEBUG)
@@ -311,12 +204,14 @@ public final class CacheService extends IntentService {
         }
     }
 
-    public static final void loadMediaItemsIntoMediaFeed(final Context context, final MediaFeed feed, final MediaSet set,
-            final int rangeStart, final int rangeEnd, final boolean includeImages, final boolean includeVideos) {
+    public static final void loadMediaItemsIntoMediaFeed(final Context context, final MediaFeed feed,
+            final MediaSet set, final int rangeStart, final int rangeEnd, final boolean includeImages,
+            final boolean includeVideos) {
         syncCache(context);
         byte[] albumData = sAlbumCache.get(set.mId, 0);
         if (albumData != null && set.mNumItemsLoaded < set.getNumExpectedItems()) {
-            final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
+            final DataInputStream dis = new DataInputStream(new BufferedInputStream(
+                    new ByteArrayInputStream(albumData), 256));
             try {
                 final int numItems = dis.readInt();
                 set.setNumExpectedItems(numItems);
@@ -351,8 +246,8 @@ public final class CacheService extends IntentService {
                     int itemMediaType = item.getMediaType();
                     if ((itemMediaType == MediaItem.MEDIA_TYPE_IMAGE && includeImages)
                             || (itemMediaType == MediaItem.MEDIA_TYPE_VIDEO && includeVideos)) {
-                        String baseUri = (itemMediaType == MediaItem.MEDIA_TYPE_IMAGE) ? BASE_CONTENT_STRING_IMAGES
-                                : BASE_CONTENT_STRING_VIDEOS;
+                        String baseUri = (itemMediaType == MediaItem.MEDIA_TYPE_IMAGE) ? CacheConstants.BASE_CONTENT_STRING_IMAGES
+                                : CacheConstants.BASE_CONTENT_STRING_VIDEOS;
                         item.mContentUri = baseUri + item.mId;
                         feed.addItemToMediaSet(item, set);
                     }
@@ -362,7 +257,7 @@ public final class CacheService extends IntentService {
             } catch (IOException e) {
                 Log.e(TAG, "Error loading items for album " + set.mName);
                 sAlbumCache.deleteAll();
-                putLocaleForAlbumCache(Locale.getDefault());
+                CacheHelper.putLocaleForAlbumCache(Locale.getDefault());
             }
         } else {
             if (DEBUG)
@@ -381,87 +276,17 @@ public final class CacheService extends IntentService {
             if (DEBUG)
                 Log.d(TAG, "Refreshing Cache for all items");
             refresh(context);
-            sAlbumCache.delete(ALBUM_CACHE_DIRTY_INDEX);
-            sAlbumCache.delete(ALBUM_CACHE_DIRTY_BUCKET_INDEX);
+            sAlbumCache.delete(CacheConstants.ALBUM_CACHE_DIRTY_INDEX);
+            sAlbumCache.delete(CacheConstants.ALBUM_CACHE_DIRTY_BUCKET_INDEX);
         } else if (!isCacheReady(false)) {
             if (DEBUG)
                 Log.d(TAG, "Refreshing Cache for dirty items");
             refreshDirtySets(context);
-            sAlbumCache.delete(ALBUM_CACHE_DIRTY_BUCKET_INDEX);
+            sAlbumCache.delete(CacheConstants.ALBUM_CACHE_DIRTY_BUCKET_INDEX);
         }
     }
 
-    public static final void populateVideoItemFromCursor(final MediaItem item, final ContentResolver cr, final Cursor cursor,
-            final String baseUri) {
-        item.setMediaType(MediaItem.MEDIA_TYPE_VIDEO);
-        populateMediaItemFromCursor(item, cr, cursor, baseUri);
-    }
 
-    public static final void populateMediaItemFromCursor(final MediaItem item, final ContentResolver cr, final Cursor cursor,
-            final String baseUri) {
-        item.mId = cursor.getLong(CacheService.MEDIA_ID_INDEX);
-        item.mCaption = cursor.getString(CacheService.MEDIA_CAPTION_INDEX);
-        item.mMimeType = cursor.getString(CacheService.MEDIA_MIME_TYPE_INDEX);
-        item.mLatitude = cursor.getDouble(CacheService.MEDIA_LATITUDE_INDEX);
-        item.mLongitude = cursor.getDouble(CacheService.MEDIA_LONGITUDE_INDEX);
-        item.mDateTakenInMs = cursor.getLong(CacheService.MEDIA_DATE_TAKEN_INDEX);
-        item.mDateAddedInSec = cursor.getLong(CacheService.MEDIA_DATE_ADDED_INDEX);
-        item.mDateModifiedInSec = cursor.getLong(CacheService.MEDIA_DATE_MODIFIED_INDEX);
-        if (item.mDateTakenInMs == item.mDateModifiedInSec) {
-            item.mDateTakenInMs = item.mDateModifiedInSec * 1000;
-        }
-        item.mFilePath = cursor.getString(CacheService.MEDIA_DATA_INDEX);
-        if (baseUri != null)
-            item.mContentUri = baseUri + item.mId;
-        final int itemMediaType = item.getMediaType();
-        final int orientationDurationValue = cursor.getInt(CacheService.MEDIA_ORIENTATION_OR_DURATION_INDEX);
-        if (itemMediaType == MediaItem.MEDIA_TYPE_IMAGE) {
-            item.mRotation = orientationDurationValue;
-        } else {
-            item.mDurationInSec = orientationDurationValue;
-        }
-    }
-
-    // Returns -1 if we failed to examine EXIF information or EXIF parsing
-    // failed.
-    public static final long fetchDateTaken(final MediaItem item) {
-        if (!item.isDateTakenValid() && !item.mTriedRetrievingExifDateTaken
-                && (item.mFilePath.endsWith(".jpg") || item.mFilePath.endsWith(".jpeg"))) {
-            try {
-                if (DEBUG)
-                    Log.i(TAG, "Parsing date taken from exif");
-                final ExifInterface exif = new ExifInterface(item.mFilePath);
-                final String dateTakenStr = exif.getAttribute(ExifInterface.TAG_DATETIME);
-                if (dateTakenStr != null) {
-                    try {
-                        final Date dateTaken = mDateFormat.parse(dateTakenStr);
-                        return dateTaken.getTime();
-                    } catch (ParseException pe) {
-                        try {
-                            final Date dateTaken = mAltDateFormat.parse(dateTakenStr);
-                            return dateTaken.getTime();
-                        } catch (ParseException pe2) {
-                            if (DEBUG)
-                                Log.i(TAG, "Unable to parse date out of string - " + dateTakenStr);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                if (DEBUG)
-                    Log.i(TAG, "Error reading Exif information, probably not a jpeg.");
-            }
-
-            // Ensures that we only try retrieving EXIF date taken once.
-            item.mTriedRetrievingExifDateTaken = true;
-        }
-        return -1L;
-    }
-
-    public static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId, final boolean isVideo,
-            final long timestamp) {
-        final DiskCache thumbnailCache = (isVideo) ? LocalDataSource.sThumbnailCacheVideo : LocalDataSource.sThumbnailCache;
-        return queryThumbnail(context, thumbId, origId, isVideo, thumbnailCache, timestamp);
-    }
 
     public static final ImageList getImageList(final Context context) {
         if (sList != null)
@@ -470,7 +295,7 @@ public final class CacheService extends IntentService {
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
         final ContentResolver cr = context.getContentResolver();
         try {
-            final Cursor cursorImages = cr.query(uriImages, THUMBNAIL_PROJECTION, null, null, null);
+            final Cursor cursorImages = cr.query(uriImages, CacheConstants.THUMBNAIL_PROJECTION, null, null, null);
             if (cursorImages != null && cursorImages.moveToFirst()) {
                 final int size = cursorImages.getCount();
                 final long[] ids = new long[size];
@@ -482,10 +307,10 @@ public final class CacheService extends IntentService {
                     if (Thread.interrupted()) {
                         break;
                     }
-                    ids[ctr] = cursorImages.getLong(THUMBNAIL_ID_INDEX);
-                    timestamp[ctr] = cursorImages.getLong(THUMBNAIL_DATE_MODIFIED_INDEX);
-                    thumbnailIds[ctr] = Utils.Crc64Long(cursorImages.getString(THUMBNAIL_DATA_INDEX));
-                    orientation[ctr] = cursorImages.getInt(THUMBNAIL_ORIENTATION_INDEX);
+                    ids[ctr] = cursorImages.getLong(CacheConstants.THUMBNAIL_ID_INDEX);
+                    timestamp[ctr] = cursorImages.getLong(CacheConstants.THUMBNAIL_DATE_MODIFIED_INDEX);
+                    thumbnailIds[ctr] = Utils.Crc64Long(cursorImages.getString(CacheConstants.THUMBNAIL_DATA_INDEX));
+                    orientation[ctr] = cursorImages.getInt(CacheConstants.THUMBNAIL_ORIENTATION_INDEX);
                     ++ctr;
                 } while (cursorImages.moveToNext());
                 cursorImages.close();
@@ -502,25 +327,6 @@ public final class CacheService extends IntentService {
             sList = list;
         }
         return list;
-    }
-
-    private static final byte[] queryThumbnail(final Context context, final long thumbId, final long origId, final boolean isVideo,
-            final DiskCache thumbnailCache, final long timestamp) {
-        if (!App.get(context).isPaused()) {
-            final Thread thumbnailThread = THUMBNAIL_THREAD.getAndSet(null);
-            if (thumbnailThread != null) {
-                thumbnailThread.interrupt();
-            }
-        }
-        byte[] bitmap = thumbnailCache.get(thumbId, timestamp);
-        if (bitmap == null) {
-            final long time = SystemClock.uptimeMillis();
-            bitmap = buildThumbnailForId(context, thumbnailCache, thumbId, origId, isVideo, DEFAULT_THUMBNAIL_WIDTH,
-                    DEFAULT_THUMBNAIL_HEIGHT, timestamp);
-            if (DEBUG)
-                Log.i(TAG, "Built thumbnail and screennail for " + origId + " in " + (SystemClock.uptimeMillis() - time));
-        }
-        return bitmap;
     }
 
     private static final void buildThumbnails(final Context context) {
@@ -541,8 +347,9 @@ public final class CacheService extends IntentService {
             final long thumbnailId = thumbnailIds[i];
             if (!isInThumbnailerSkipList(thumbnailId)) {
                 if (!thumbnailCache.isDataAvailable(thumbnailId, timeModifiedInSec * 1000)) {
-                    byte[] retVal = buildThumbnailForId(context, thumbnailCache, thumbnailId, id, false, DEFAULT_THUMBNAIL_WIDTH,
-                            DEFAULT_THUMBNAIL_HEIGHT, timeModifiedInSec * 1000);
+                    byte[] retVal = buildThumbnailForId(context, thumbnailCache, thumbnailId, id, false,
+                            CacheConstants.DEFAULT_THUMBNAIL_WIDTH, CacheConstants.DEFAULT_THUMBNAIL_HEIGHT,
+                            timeModifiedInSec * 1000);
                     if (retVal == null || retVal.length == 0) {
                         // There was an error in building the thumbnail.
                         // We record this thumbnail id
@@ -571,8 +378,9 @@ public final class CacheService extends IntentService {
         return false;
     }
 
-    private static final byte[] buildThumbnailForId(final Context context, final DiskCache thumbnailCache, final long thumbId,
-            final long origId, final boolean isVideo, final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
+    static final byte[] buildThumbnailForId(final Context context, final DiskCache thumbnailCache,
+            final long thumbId, final long origId, final boolean isVideo, final int thumbnailWidth,
+            final int thumbnailHeight, final long timestamp) {
         if (origId == Shared.INVALID) {
             return null;
         }
@@ -608,16 +416,17 @@ public final class CacheService extends IntentService {
             if (bitmap == null) {
                 return null;
             }
-            final byte[] retVal = writeBitmapToCache(thumbnailCache, thumbId, origId, bitmap, thumbnailWidth, thumbnailHeight,
-                    timestamp);
+            final byte[] retVal = writeBitmapToCache(thumbnailCache, thumbId, origId, bitmap, thumbnailWidth,
+                    thumbnailHeight, timestamp);
             return retVal;
         } catch (InterruptedException e) {
             return null;
         }
     }
 
-    public static final byte[] writeBitmapToCache(final DiskCache thumbnailCache, final long thumbId, final long origId,
-            final Bitmap bitmap, final int thumbnailWidth, final int thumbnailHeight, final long timestamp) {
+    public static final byte[] writeBitmapToCache(final DiskCache thumbnailCache, final long thumbId,
+            final long origId, final Bitmap bitmap, final int thumbnailWidth, final int thumbnailHeight,
+            final long timestamp) {
         final int width = bitmap.getWidth();
         final int height = bitmap.getHeight();
         // Detect faces to find the focal point, otherwise fall back to the
@@ -665,8 +474,8 @@ public final class CacheService extends IntentService {
         paint.setDither(true);
         paint.setFilterBitmap(true);
         canvas.drawColor(0);
-        canvas.drawBitmap(bitmap, new Rect(cropX, cropY, cropX + cropWidth, cropY + cropHeight), new Rect(0, 0, thumbnailWidth,
-                thumbnailHeight), paint);
+        canvas.drawBitmap(bitmap, new Rect(cropX, cropY, cropX + cropWidth, cropY + cropHeight), new Rect(0, 0,
+                thumbnailWidth, thumbnailHeight), paint);
         bitmap.recycle();
 
         // Store (long thumbnailId, short focusX, short focusY, JPEG data).
@@ -701,9 +510,9 @@ public final class CacheService extends IntentService {
             Log.i(TAG, "Starting CacheService");
         if (Environment.getExternalStorageState() == Environment.MEDIA_BAD_REMOVAL) {
             sAlbumCache.deleteAll();
-            putLocaleForAlbumCache(Locale.getDefault());
+            CacheHelper.putLocaleForAlbumCache(Locale.getDefault());
         }
-        Locale locale = getLocaleForAlbumCache();
+        Locale locale = CacheHelper.getLocaleForAlbumCache();
         if (locale != null && locale.equals(Locale.getDefault())) {
 
         } else {
@@ -720,58 +529,8 @@ public final class CacheService extends IntentService {
         }
     }
 
-    private static final void putLocaleForAlbumCache(final Locale locale) {
-        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        final DataOutputStream dos = new DataOutputStream(bos);
-        try {
-            Utils.writeUTF(dos, locale.getCountry());
-            Utils.writeUTF(dos, locale.getLanguage());
-            Utils.writeUTF(dos, locale.getVariant());
-            dos.flush();
-            bos.flush();
-            final byte[] data = bos.toByteArray();
-            sAlbumCache.put(ALBUM_CACHE_LOCALE_INDEX, data, 0);
-            sAlbumCache.flush();
-            dos.close();
-            bos.close();
-        } catch (IOException e) {
-            // Could not write locale to cache.
-            if (DEBUG)
-                Log.i(TAG, "Error writing locale to cache.");
-            ;
-        }
-    }
-
-    private static final Locale getLocaleForAlbumCache() {
-        final byte[] data = sAlbumCache.get(ALBUM_CACHE_LOCALE_INDEX, 0);
-        if (data != null && data.length > 0) {
-            ByteArrayInputStream bis = new ByteArrayInputStream(data);
-            DataInputStream dis = new DataInputStream(bis);
-            try {
-                String country = Utils.readUTF(dis);
-                if (country == null)
-                    country = "";
-                String language = Utils.readUTF(dis);
-                if (language == null)
-                    language = "";
-                String variant = Utils.readUTF(dis);
-                if (variant == null)
-                    variant = "";
-                final Locale locale = new Locale(language, country, variant);
-                dis.close();
-                bis.close();
-                return locale;
-            } catch (IOException e) {
-                // Could not read locale in cache.
-                if (DEBUG)
-                    Log.i(TAG, "Error reading locale from cache.");
-                return null;
-            }
-        }
-        return null;
-    }
-
-    private static final void restartThread(final AtomicReference<Thread> threadRef, final String name, final Runnable action) {
+    private static final void restartThread(final AtomicReference<Thread> threadRef, final String name,
+            final Runnable action) {
         // Create a new thread.
         final Thread newThread = new Thread() {
             @Override
@@ -801,7 +560,7 @@ public final class CacheService extends IntentService {
                 try {
                     // It is an optimization to prevent the thumbnailer from
                     // running while the application loads
-                    Thread.sleep(THUMBNAILER_WAIT_IN_MS);
+                    Thread.sleep(CacheConstants.THUMBNAILER_WAIT_IN_MS);
                 } catch (InterruptedException e) {
                     return;
                 }
@@ -854,18 +613,22 @@ public final class CacheService extends IntentService {
             Log.i(TAG, "Refreshing cache.");
         synchronized (sCacheLock) {
             sAlbumCache.deleteAll();
-            putLocaleForAlbumCache(Locale.getDefault());
+            CacheHelper.putLocaleForAlbumCache(Locale.getDefault());
 
             final ArrayList<MediaSet> sets = new ArrayList<MediaSet>();
             LongSparseArray<MediaSet> acceleratedSets = new LongSparseArray<MediaSet>();
             if (DEBUG)
                 Log.i(TAG, "Building albums.");
-            final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("distinct", "true").build();
-            final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("distinct", "true").build();
+            final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI.buildUpon()
+                    .appendQueryParameter("distinct", "true").build();
+            final Uri uriVideos = Video.Media.EXTERNAL_CONTENT_URI.buildUpon().appendQueryParameter("distinct", "true")
+                    .build();
             final ContentResolver cr = context.getContentResolver();
             try {
-                final Cursor cursorImages = cr.query(uriImages, BUCKET_PROJECTION_IMAGES, null, null, DEFAULT_BUCKET_SORT_ORDER);
-                final Cursor cursorVideos = cr.query(uriVideos, BUCKET_PROJECTION_VIDEOS, null, null, DEFAULT_BUCKET_SORT_ORDER);
+                final Cursor cursorImages = cr.query(uriImages, CacheConstants.BUCKET_PROJECTION_IMAGES, null, null,
+                        CacheConstants.DEFAULT_BUCKET_SORT_ORDER);
+                final Cursor cursorVideos = cr.query(uriVideos, CacheConstants.BUCKET_PROJECTION_VIDEOS, null, null,
+                        CacheConstants.DEFAULT_BUCKET_SORT_ORDER);
                 Cursor[] cursors = new Cursor[2];
                 cursors[0] = cursorImages;
                 cursors[1] = cursorVideos;
@@ -884,12 +647,12 @@ public final class CacheService extends IntentService {
                             if (Thread.interrupted()) {
                                 return;
                             }
-                            long setId = sortCursor.getLong(BUCKET_ID_INDEX);
+                            long setId = sortCursor.getLong(CacheConstants.BUCKET_ID_INDEX);
                             MediaSet mediaSet = findSet(setId, acceleratedSets);
                             if (mediaSet == null) {
                                 mediaSet = new MediaSet();
                                 mediaSet.mId = setId;
-                                mediaSet.mName = sortCursor.getString(BUCKET_NAME_INDEX);
+                                mediaSet.mName = sortCursor.getString(CacheConstants.BUCKET_NAME_INDEX);
                                 sets.add(mediaSet);
                                 acceleratedSets.put(setId, mediaSet);
                             }
@@ -917,7 +680,7 @@ public final class CacheService extends IntentService {
 
     private final static void refreshDirtySets(final Context context) {
         synchronized (sCacheLock) {
-            final byte[] existingData = sAlbumCache.get(ALBUM_CACHE_DIRTY_BUCKET_INDEX, 0);
+            final byte[] existingData = sAlbumCache.get(CacheConstants.ALBUM_CACHE_DIRTY_BUCKET_INDEX, 0);
             if (existingData != null && existingData.length > 0) {
                 final long[] ids = toLongArray(existingData);
                 final int numIds = ids.length;
@@ -935,12 +698,12 @@ public final class CacheService extends IntentService {
                     populateMediaItemsForSets(context, sets, acceleratedSets, true);
                 }
             }
-            sAlbumCache.delete(ALBUM_CACHE_DIRTY_BUCKET_INDEX);
+            sAlbumCache.delete(CacheConstants.ALBUM_CACHE_DIRTY_BUCKET_INDEX);
         }
     }
 
     /**
-     *这个函数用于检查是否有新的相册 ，这个我真是不特别懂..呵呵
+     * 这个函数用于检查是否有新的相册 ，这个我真是不特别懂..呵呵
      */
     public static final long[] computeDirtySets(final Context context) {
         final Uri uriImages = Images.Media.EXTERNAL_CONTENT_URI;
@@ -949,12 +712,12 @@ public final class CacheService extends IntentService {
         final String where = Images.ImageColumns.BUCKET_ID + "!=0) GROUP BY (" + Images.ImageColumns.BUCKET_ID + " ";
         ArrayList<Long> retVal = new ArrayList<Long>();
         try {
-            final Cursor cursorImages = cr.query(uriImages, SENSE_PROJECTION, where, null, null);
-            final Cursor cursorVideos = cr.query(uriVideos, SENSE_PROJECTION, where, null, null);
+            final Cursor cursorImages = cr.query(uriImages, CacheConstants.SENSE_PROJECTION, where, null, null);
+            final Cursor cursorVideos = cr.query(uriVideos, CacheConstants.SENSE_PROJECTION, where, null, null);
             Cursor[] cursors = new Cursor[2];
             cursors[0] = cursorImages;
             cursors[1] = cursorVideos;
-            //操？还可以这样玩的..mergeCursor..
+            // 操？还可以这样玩的..mergeCursor..
             final MergeCursor cursor = new MergeCursor(cursors);
             final ArrayList<Long> setIds = new ArrayList<Long>();
             final ArrayList<Long> maxAdded = new ArrayList<Long>();
@@ -1017,9 +780,10 @@ public final class CacheService extends IntentService {
                         ++ctr;
                     } while (ctr < numSets);
                     // We now check for any deleted sets.
-                    final byte[] albumData = sAlbumCache.get(ALBUM_CACHE_METADATA_INDEX, 0);
+                    final byte[] albumData = sAlbumCache.get(CacheConstants.ALBUM_CACHE_METADATA_INDEX, 0);
                     if (albumData != null && albumData.length > 0) {
-                        final DataInputStream dis = new DataInputStream(new BufferedInputStream(new ByteArrayInputStream(albumData), 256));
+                        final DataInputStream dis = new DataInputStream(new BufferedInputStream(
+                                new ByteArrayInputStream(albumData), 256));
                         try {
                             final int numAlbums = dis.readInt();
                             for (int i = 0; i < numAlbums; ++i) {
@@ -1028,7 +792,8 @@ public final class CacheService extends IntentService {
                                 dis.readBoolean();
                                 dis.readBoolean();
                                 if (!setIds.contains(setId)) {
-                                    // This set was deleted, we need to recompute the cache.
+                                    // This set was deleted, we need to
+                                    // recompute the cache.
                                     markDirty();
                                     break;
                                 }
@@ -1090,12 +855,15 @@ public final class CacheService extends IntentService {
                 Log.i(TAG, "Updating dirty albums where " + whereClause);
         }
         try {
-            final Cursor cursorImages = cr.query(uriImages, PROJECTION_IMAGES, whereClause, null, DEFAULT_IMAGE_SORT_ORDER);
-            final Cursor cursorVideos = cr.query(uriVideos, PROJECTION_VIDEOS, whereClause, null, DEFAULT_VIDEO_SORT_ORDER);
+            final Cursor cursorImages = cr.query(uriImages, CacheConstants.PROJECTION_IMAGES, whereClause, null,
+                    CacheConstants.DEFAULT_IMAGE_SORT_ORDER);
+            final Cursor cursorVideos = cr.query(uriVideos, CacheConstants.PROJECTION_VIDEOS, whereClause, null,
+                    CacheConstants.DEFAULT_VIDEO_SORT_ORDER);
             final Cursor[] cursors = new Cursor[2];
             cursors[0] = cursorImages;
             cursors[1] = cursorVideos;
-            final SortCursor sortCursor = new SortCursor(cursors, Images.ImageColumns.DATE_TAKEN, SortCursor.TYPE_NUMERIC, true);
+            final SortCursor sortCursor = new SortCursor(cursors, Images.ImageColumns.DATE_TAKEN,
+                    SortCursor.TYPE_NUMERIC, true);
             if (Thread.interrupted()) {
                 return;
             }
@@ -1115,11 +883,13 @@ public final class CacheService extends IntentService {
                         final MediaItem item = new MediaItem();
                         final boolean isVideo = (sortCursor.getCurrentCursorIndex() == 1);
                         if (isVideo) {
-                            populateVideoItemFromCursor(item, cr, sortCursor, CacheService.BASE_CONTENT_STRING_VIDEOS);
+                            CacheHelper.populateVideoItemFromCursor(item, cr, sortCursor,
+                                    CacheConstants.BASE_CONTENT_STRING_VIDEOS);
                         } else {
-                            populateMediaItemFromCursor(item, cr, sortCursor, CacheService.BASE_CONTENT_STRING_IMAGES);
+                            CacheHelper.populateMediaItemFromCursor(item, cr, sortCursor,
+                                    CacheConstants.BASE_CONTENT_STRING_IMAGES);
                         }
-                        final long setId = sortCursor.getLong(MEDIA_BUCKET_ID_INDEX);
+                        final long setId = sortCursor.getLong(CacheConstants.MEDIA_BUCKET_ID_INDEX);
                         final MediaSet set = findSet(setId, acceleratedSets);
                         if (set != null) {
                             set.addItem(item);
@@ -1158,17 +928,17 @@ public final class CacheService extends IntentService {
                 dos.writeBoolean(set.mHasVideos);
             }
             dos.flush();
-            sAlbumCache.put(ALBUM_CACHE_METADATA_INDEX, bos.toByteArray(), 0);
+            sAlbumCache.put(CacheConstants.ALBUM_CACHE_METADATA_INDEX, bos.toByteArray(), 0);
             dos.close();
             if (numSets == 0) {
                 sAlbumCache.deleteAll();
-                putLocaleForAlbumCache(Locale.getDefault());
+                CacheHelper.putLocaleForAlbumCache(Locale.getDefault());
             }
             sAlbumCache.flush();
         } catch (IOException e) {
             Log.e(TAG, "Error writing albums to diskcache.");
             sAlbumCache.deleteAll();
-            putLocaleForAlbumCache(Locale.getDefault());
+            CacheHelper.putLocaleForAlbumCache(Locale.getDefault());
         }
     }
 
@@ -1219,7 +989,7 @@ public final class CacheService extends IntentService {
         } catch (Exception e) {
             Log.e(TAG, "Error writing to diskcache for set " + set.mName);
             sAlbumCache.deleteAll();
-            putLocaleForAlbumCache(Locale.getDefault());
+            CacheHelper.putLocaleForAlbumCache(Locale.getDefault());
         }
     }
 

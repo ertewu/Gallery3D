@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2009 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.cooliris.media;
 
 import android.content.Context;
@@ -28,6 +12,17 @@ import android.view.Surface;
 import android.view.WindowManager;
 
 import com.cooliris.app.App;
+import com.cooliris.math.Shared;
+import com.cooliris.math.Vector3f;
+import com.cooliris.media.a_display.DisplayItem;
+import com.cooliris.media.a_media.MediaItem;
+import com.cooliris.media.collection.IndexRange;
+import com.cooliris.media.collection.Pool;
+import com.cooliris.media.component.CropImage;
+import com.cooliris.media.layer.grid.GridLayer;
+import com.cooliris.media.layer.grid.HudLayer;
+import com.cooliris.media.utils.FloatUtils;
+import com.cooliris.media.utils.Utils;
 
 public final class GridInputProcessor implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener,
         ScaleGestureDetector.OnScaleGestureListener {
@@ -51,15 +46,15 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
     private boolean mProcessTouch;
     private boolean mTouchMoved;
     private float mDpadIgnoreTime = 0.0f;
-    private GridCamera mCamera;
-    private GridLayer mLayer;
-    private Context mContext;
-    private Pool<Vector3f> mPool;
-    private DisplayItem[] mDisplayItems;
+    private final GridCamera mCamera;
+    private final GridLayer mLayer;
+    private final Context mContext;
+    private final Pool<Vector3f> mPool;
+    private final DisplayItem[] mDisplayItems;
     private boolean mPrevHitEdge;
     private boolean mTouchFeedbackDelivered;
-    private GestureDetector mGestureDetector;
-    private ScaleGestureDetector mScaleGestureDetector;
+    private final GestureDetector mGestureDetector;
+    private final ScaleGestureDetector mScaleGestureDetector;
     private Display mDisplay;
     private boolean mZoomGesture;
     private int mCurrentScaleSlot;
@@ -164,7 +159,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         long timestamp = SystemClock.elapsedRealtime();
         long delta = timestamp - mPrevTouchTime;
         mPrevTouchTime = timestamp;
-        float timeElapsed = (float) delta;
+        float timeElapsed = delta;
         timeElapsed = timeElapsed * 0.001f; // division by 1000 for seconds
         switch (mActionCode) {
         case MotionEvent.ACTION_UP:
@@ -532,11 +527,13 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         mCurrentSelectedSlot = slotId;
     }
 
+    @Override
     public boolean onDown(MotionEvent e) {
         // TODO Auto-generated method stub
         return true;
     }
 
+    @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
         if (mCurrentSelectedSlot == Shared.INVALID) {
             mCamera.moveYTo(0);
@@ -577,6 +574,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         }
     }
 
+    @Override
     public void onLongPress(MotionEvent e) {
         if (mZoomGesture)
             return;
@@ -599,16 +597,19 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         }
     }
 
+    @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         // TODO Auto-generated method stub
         return false;
     }
 
+    @Override
     public void onShowPress(MotionEvent e) {
         // TODO Auto-generated method stub
 
     }
 
+    @Override
     public boolean onSingleTapUp(MotionEvent e) {
         GridLayer layer = mLayer;
         int posX = (int) e.getX();
@@ -683,6 +684,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
                 if (layer.getPickIntent()) {
                     // we need to return this item
                     App.get(mContext).getHandler().post(new Runnable() {
+                        @Override
                         public void run() {
                             CropImage.launchCropperOrFinish(mContext, item);
                         }
@@ -704,6 +706,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         constrainCamera(true);
     }
 
+    @Override
     public boolean onDoubleTap(MotionEvent e) {
         final GridLayer layer = mLayer;
         if (layer.getState() == GridLayer.STATE_FULL_SCREEN && !mCamera.isZAnimating()) {
@@ -729,10 +732,12 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         return true;
     }
 
+    @Override
     public boolean onDoubleTapEvent(MotionEvent e) {
         return false;
     }
 
+    @Override
     public boolean onSingleTapConfirmed(MotionEvent e) {
         return false;
     }
@@ -750,6 +755,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         // mView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
     }
 
+    @Override
     public boolean onScale(ScaleGestureDetector detector) {
         final GridLayer layer = mLayer;
         float scale = detector.getScaleFactor();
@@ -789,6 +795,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         return true;
     }
 
+    @Override
     public boolean onScaleBegin(ScaleGestureDetector detector) {
         mZoomGesture = true;
         mScale = 1.0f;
@@ -811,6 +818,7 @@ public final class GridInputProcessor implements GestureDetector.OnGestureListen
         return true;
     }
 
+    @Override
     public void onScaleEnd(ScaleGestureDetector detector, boolean cancel) {
         if (!cancel) {
             final GridLayer layer = mLayer;

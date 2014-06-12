@@ -24,19 +24,23 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
+import com.cooliris.math.Shared;
+import com.cooliris.media.collection.MatrixStack;
+import com.cooliris.media.utils.FloatUtils;
+
 /**
  * A 2D rectangular mesh. Can be drawn textured or untextured. This version is
  * modified from the original Grid.java (found in the SpriteText package in the
  * APIDemos Android sample) to support hardware vertex buffers.
  */
 
-final class GridQuad {
-    private FloatBuffer mVertexBuffer;
-    private FloatBuffer mOverlayTexCoordBuffer;
-    private CharBuffer mIndexBuffer;
+public final class GridQuad {
+    private final FloatBuffer mVertexBuffer;
+    private final FloatBuffer mOverlayTexCoordBuffer;
+    private final CharBuffer mIndexBuffer;
 
-    private int mW;
-    private int mH;
+    private final int mW;
+    private final int mH;
     private static final int INDEX_COUNT = 4;
     private static final int ORIENTATION_COUNT = 360;
     private int mVertBufferIndex;
@@ -54,11 +58,11 @@ final class GridQuad {
     private boolean mQuadChanged;
     private float mDefaultAspectRatio;
     private int mBaseTextureCoordBufferIndex;
-    private FloatBuffer mBaseTexCoordBuffer;
+    private final FloatBuffer mBaseTexCoordBuffer;
     private final boolean mOrientedQuad;
     private MatrixStack mMatrix;
-    private float[] mCoordsIn = new float[4];
-    private float[] mCoordsOut = new float[4];
+    private final float[] mCoordsIn = new float[4];
+    private final float[] mCoordsOut = new float[4];
 
     public static GridQuad createGridQuad(float width, float height, float xOffset, float yOffset, float uExtents, float vExtents,
             boolean generateOrientedQuads) {
@@ -236,7 +240,7 @@ final class GridQuad {
             scale = 1.0f / scale;
             matrix.glRotatef(-orientationId, 0.0f, 0.0f, 1.0f);
             matrix.glScalef(scale, scale, 1.0f);
-            matrix.glTranslatef(-0.5f + (float) (sini * 0.125f / scale), -0.5f
+            matrix.glTranslatef(-0.5f + sini * 0.125f / scale, -0.5f
                     + (float) (Math.abs(Math.sin(itheta * 0.5f) * 0.25f)), 0.0f);
             // now we have the desired matrix
             // populate s,t,r,q

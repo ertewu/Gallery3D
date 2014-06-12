@@ -1,22 +1,9 @@
-/*
- * Copyright (C) 2009 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.cooliris.media;
 
 import android.os.Bundle;
+
+import com.cooliris.math.Vector3f;
+import com.cooliris.media.utils.FloatUtils;
 
 public final class GridCamera {
     public static final float MAX_CAMERA_SPEED = 12.0f;
@@ -119,7 +106,7 @@ public final class GridCamera {
     public void viewportChanged(int w, int h, float itemWidth, float itemHeight) {
         // For pixel precision we need to use this formula.
         /* fov = 2tan-1(qFactor/2*defaultZ) where qFactor = height/ItemHeight */
-        float qFactor = h / (float) itemHeight;
+        float qFactor = h / itemHeight;
         float fov = 2.0f * (float) Math.toDegrees(Math.atan2(qFactor / 2, GridCamera.EYE_Z));
         mWidth = w;
         mHeight = h;
@@ -131,7 +118,7 @@ public final class GridCamera {
         mItemHeight = (int) itemHeight;
         mItemWidth = (int) itemWidth;
         mScale = itemHeight;
-        mOneByScale = 1.0f / (float) itemHeight;
+        mOneByScale = 1.0f / itemHeight;
         mFov = fov;
     }
 
@@ -164,7 +151,7 @@ public final class GridCamera {
     }
 
     public float getDistanceToFitRect(float f, float g) {
-        final float thisAspectRatio = (float) f / (float) g;
+        final float thisAspectRatio = f / g;
         float h = g;
         if (thisAspectRatio > mAspectRatio) {
             // The width will hit the screen.

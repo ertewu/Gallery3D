@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2009 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.cooliris.media;
 
 import java.util.Arrays;
@@ -27,6 +11,21 @@ import android.content.Context;
 
 import com.cooliris.app.App;
 import com.cooliris.app.Res;
+import com.cooliris.math.Shared;
+import com.cooliris.math.Vector3f;
+import com.cooliris.media.a_display.DisplayItem;
+import com.cooliris.media.a_display.DisplayList;
+import com.cooliris.media.a_display.DisplaySlot;
+import com.cooliris.media.a_media.MediaBucketList;
+import com.cooliris.media.a_media.MediaItem;
+import com.cooliris.media.a_media.MediaSet;
+import com.cooliris.media.collection.IndexRange;
+import com.cooliris.media.layer.grid.GridLayer;
+import com.cooliris.media.layer.grid.HudLayer;
+import com.cooliris.media.texture.MediaItemTexture;
+import com.cooliris.media.texture.StringTexture;
+import com.cooliris.media.texture.Texture;
+import com.cooliris.media.utils.FloatUtils;
 
 public final class GridDrawManager {
     public static final int PASS_THUMBNAIL_CONTENT = 0;
@@ -50,7 +49,7 @@ public final class GridDrawManager {
     private IndexRange mVisibleRange;
     private int mSelectedSlot;
     private int mCurrentFocusSlot;
-    private DisplayItem[] mItemsDrawn;
+    private final DisplayItem[] mItemsDrawn;
     private int mDrawnCounter;
     private float mTargetFocusMixRatio = 0.0f;
     private float mFocusMixRatio = 0.0f;
@@ -65,6 +64,7 @@ public final class GridDrawManager {
     private boolean mHoldPosition;
 
     private static final Comparator<DisplayItem> sDisplayItemComparator = new Comparator<DisplayItem>() {
+        @Override
         public int compare(DisplayItem a, DisplayItem b) {
             if (a == null || b == null) {
                 return 0;

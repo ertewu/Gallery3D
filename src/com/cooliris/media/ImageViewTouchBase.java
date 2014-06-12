@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2009 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.cooliris.media;
 
 import android.content.Context;
@@ -26,7 +10,7 @@ import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.widget.ImageView;
 
-abstract class ImageViewTouchBase extends ImageView {
+public abstract class ImageViewTouchBase extends ImageView {
 
     @SuppressWarnings("unused")
     private static final String TAG = "ImageViewTouchBase";
@@ -143,6 +127,7 @@ abstract class ImageViewTouchBase extends ImageView {
 
         if (viewWidth <= 0) {
             mOnLayoutRunnable = new Runnable() {
+                @Override
                 public void run() {
                     setImageRotateBitmapResetBase(bitmap, resetSupp);
                 }
@@ -170,7 +155,7 @@ abstract class ImageViewTouchBase extends ImageView {
     // view's dimensions then center it (literally). If the image
     // is scaled larger than the view and is translated out of view
     // then translate it back into view (i.e. eliminate black bars).
-    protected void center(boolean horizontal, boolean vertical) {
+    public void center(boolean horizontal, boolean vertical) {
         if (mBitmapDisplayed.getBitmap() == null) {
             return;
         }
@@ -236,7 +221,7 @@ abstract class ImageViewTouchBase extends ImageView {
         return getValue(matrix, Matrix.MSCALE_X);
     }
 
-    protected float getScale() {
+    public float getScale() {
         return getScale(mSuppMatrix);
     }
 
@@ -306,6 +291,7 @@ abstract class ImageViewTouchBase extends ImageView {
         final long startTime = System.currentTimeMillis();
 
         mHandler.post(new Runnable() {
+            @Override
             public void run() {
                 long now = System.currentTimeMillis();
                 float currentMs = Math.min(durationMs, now - startTime);
